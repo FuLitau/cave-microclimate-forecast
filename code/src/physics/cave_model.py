@@ -206,11 +206,15 @@ class CaveParams:
 
 #: 参数出处表。供方案/论文附录直接引用。
 PARAM_SOURCES: dict[str, dict[str, str]] = {
-    "ach_open / ach_closed": {
-        "value": "开门 9-13 /h，关门 1.6 /h",
+    "q_open_m3h / q_closed_m3h": {
+        "value": "开门 860 / 关门 131 m^3/h（= 实测 ACH x 该窟体积）",
         "source": "Zhao et al. 2026, npj Heritage Science",
         "doi": "10.1038/s40494-026-02955-0",
-        "note": "12 个洞窟 CO2 示踪衰减法实测，直接适用",
+        "note": "示踪衰减法实测 ACH：45 窟 12.97/10.88/9.46/10.73 /h x 82.24 m^3、"
+                "46 窟 13.61/13.20/10.92/8.90 /h x 70.40 m^3 -> 约 860；"
+                "关门 1.59 +/- 0.03 /h x 82.24 -> 约 131。"
+                "建模用体积流量 Q 而非 ACH：ACH = Q/V 强依赖洞窟体积，"
+                "而已有实测 ACH 只来自 70-82 m^3 小窟，Q 才是可迁移量。",
     },
     "alpha_m2_s": {
         "value": "5.07e-7 +/- 1.27e-7 m^2/s",

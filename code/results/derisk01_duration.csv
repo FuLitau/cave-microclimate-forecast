@@ -1,7 +1,7 @@
 threshold,duration_MAE_h,duration_bias_h,duration_RMSE_h,model
-62.0,2.1188,-1.1145,5.4256,FirstOrderTransfer(初稿方案)
-62.0,2.167,0.7957,5.6537,Operator-Full(本作品)
-67.0,1.1314,-0.759,3.7105,FirstOrderTransfer(初稿方案)
-67.0,1.8702,0.8275,5.483,Operator-Full(本作品)
-75.0,0.3669,-0.3297,1.8498,FirstOrderTransfer(初稿方案)
-75.0,1.2963,0.7749,4.6409,Operator-Full(本作品)
+62.0,22.3341,22.3198,23.0512,FirstOrderTransfer(初稿方案)
+62.0,0.2667,-0.1506,1.4609,Operator-Full(本作品)
+67.0,22.4737,22.4693,23.1799,FirstOrderTransfer(初稿方案)
+67.0,0.0964,-0.0756,0.7583,Operator-Full(本作品)
+75.0,22.5016,22.4984,23.2242,FirstOrderTransfer(初稿方案)
+75.0,0.0257,-0.0257,0.3909,Operator-Full(本作品)
