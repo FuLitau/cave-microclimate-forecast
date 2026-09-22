@@ -61,10 +61,13 @@ th {{ background: #e8eef5; border: 0.6pt solid #9bb3c9; padding: 4pt 5pt;
       text-align: left; font-weight: bold; }}
 td {{ border: 0.6pt solid #c2cfdb; padding: 4pt 5pt; vertical-align: top; }}
 tr:nth-child(even) td {{ background: #f7fafd; }}
-code {{ font-family: "CJK"; background: #f2f4f7; font-size: 8.8pt; }}
-pre {{ background: #f6f8fa; border-left: 2.5pt solid #0b3d6b; padding: 6pt 8pt;
-       font-size: 8.2pt; line-height: 1.35; margin: 7pt 0 10pt 0; }}
-pre code {{ background: none; font-size: 8.2pt; }}
+code {{ font-family: "CJK"; background: #f2f4f7; color: #1a1a1a; font-size: 8.8pt; }}
+pre {{ background: #f6f8fa; color: #1a1a1a; border-left: 2.5pt solid #0b3d6b;
+       padding: 6pt 8pt; font-size: 8.2pt; line-height: 1.35; margin: 7pt 0 10pt 0; }}
+/* 必须显式写成与 pre 相同的颜色：PyMuPDF Story 不认 `background: none`，
+   会把围栏代码块内每一行的底色画成纯黑矩形，文字被黑条盖住（曾导致
+   「背景与字体颜色相近看不清」）。改回 `none` 会复现该 bug。 */
+pre code {{ background: #f6f8fa; font-size: 8.2pt; }}
 blockquote {{ margin: 7pt 0 7pt 10pt; padding-left: 9pt;
               border-left: 2.5pt solid #b9c6d4; color: #40566b; }}
 hr {{ border: none; border-top: 0.6pt solid #c2cfdb; margin: 12pt 0; }}
