@@ -21,6 +21,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from dataclasses import replace
 from pathlib import Path
@@ -79,16 +80,36 @@ def daily_range_ratio(sim: pd.DataFrame, outdoor: pd.DataFrame,
     return round(float(np.median((tin[ok] / tout[ok]).to_numpy())), 4)
 
 
-def evaluate(outdoor: pd.DataFrame, params: CaveParams) -> dict:
+def evaluate(outdoor: pd.DataFrame, params: CaveParams,
+             drive: pd.DataFrame | None = None) -> dict:
     """在"正常开放"与"强制闭窟"两种门态下各跑一次，并量化游客效应。
 
     这样才能与 Gong et al. 2025 的第 71 窟对照实验（2019 开放 vs 2020 疫情闭窟）
     做同口径比较。
+
+    Parameters
+    ----------
+    outdoor : DataFrame
+        **统计窗口**（本文件用 2010–2019）。
+    drive : DataFrame, optional
+        比 ``outdoor`` 更长的驱动序列，其尾部覆盖 ``outdoor``。
+        给出时，仿真的前段充当**自旋期**，只对 ``outdoor`` 覆盖的时段统计。
+
+    为什么需要 ``drive``
+    -------------------
+    ``simulate()`` 只用外场**前 30 天**均值作初值，而 5 m 岩体导热链的
+    时间常数是**月–年量级**，深部节点在短初值下并未平衡。实测对比
+    （``code/experiments/check_spinup_sensitivity.py``）表明：
+    6 个标定目标中 5 个几乎不变，但 **年极差比 T 由 0.529 降到 0.468**
+    （文献 0.559）—— 即不加自旋期会**掩盖**模型年阻尼过强的真实偏差。
     """
-    sim = CaveModel(params).simulate(outdoor)
-    sim_closed = CaveModel(replace(params, force_door_closed=True)).simulate(outdoor)
+    drive = outdoor if drive is None else drive
+    lo, hi = outdoor.index[0], outdoor.index[-1]
+
+    sim = CaveModel(params).simulate(drive).loc[lo:hi]
+    sim_closed = CaveModel(replace(params, force_door_closed=True)).simulate(drive).loc[lo:hi]
     # 游客效应：同一天气下有人 vs 无人的窟内 RH 峰值差
-    sim_novisit = CaveModel(replace(params, visitor_occupancy=0.0)).simulate(outdoor)
+    sim_novisit = CaveModel(replace(params, visitor_occupancy=0.0)).simulate(drive).loc[lo:hi]
 
     out = {"eta": params.ventilation_mixing_efficiency,
            "wall_pore_rh": params.wall_pore_rh,
@@ -158,9 +179,19 @@ def _score(row) -> float:
 
 def main() -> None:
     interim = ROOT / "data" / "interim" / "power_hourly_mogao_2001_2025.csv"
-    outdoor = pd.read_csv(interim, index_col=0, parse_dates=True).sort_index()
+    outdoor_all = pd.read_csv(interim, index_col=0, parse_dates=True).sort_index()
     # 标定用 10 年即可，缩短耗时且足够分辨年周期
-    outdoor = outdoor.loc["2010-01-01":"2019-12-31"]
+    EVAL_START, EVAL_END = "2010-01-01", "2019-12-31"
+    outdoor = outdoor_all.loc[EVAL_START:EVAL_END]
+    # 自旋期（理由见 evaluate() docstring）：simulate() 只用外场前 30 天均值作初值，
+    # 而 5 m 岩体导热链的时间常数是月–年量级，深部节点短初值下并未平衡。
+    spinup_years = int(os.environ.get("CALIB_SPINUP_YEARS", "2"))
+    drive = (outdoor_all.loc[f"{2010 - spinup_years}-01-01":EVAL_END]
+             if spinup_years > 0 else None)
+    print(f"自旋期 = {spinup_years} 年"
+          + (f"；驱动 {drive.index[0]:%Y-%m-%d} → {drive.index[-1]:%Y-%m-%d}"
+             if drive is not None else "（关闭）")
+          + f"，统计窗口 {outdoor.index[0]:%Y-%m-%d} → {outdoor.index[-1]:%Y-%m-%d}")
 
     a_out, _ = harmonic(outdoor["T2M"])
     print(f"窟外气温年振幅 = {a_out:.2f} degC   日循环 std = {diurnal_std(outdoor['T2M']):.3f} degC")
@@ -182,7 +213,7 @@ def main() -> None:
                                wall_pore_rh=pore,
                                pillar_depth_m=5.0,
                                visitor_occupancy=1.0)
-                r = evaluate(outdoor, p)
+                r = evaluate(outdoor, p, drive=drive)
                 r["k_sorption"] = ks
                 r["score"] = _score(r)
                 rows.append(r)
