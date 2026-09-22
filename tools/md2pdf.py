@@ -69,6 +69,8 @@ blockquote {{ margin: 7pt 0 7pt 10pt; padding-left: 9pt;
               border-left: 2.5pt solid #b9c6d4; color: #40566b; }}
 hr {{ border: none; border-top: 0.6pt solid #c2cfdb; margin: 12pt 0; }}
 strong {{ font-weight: bold; }}
+/* 封面分页：markdown 里写 <div class="pagebreak"></div> 即可强制换页 */
+.pagebreak {{ page-break-after: always; }}
 """
 
 
