@@ -1,0 +1,31 @@
+{
+  "n_caves_total": 9,
+  "n_caves_valid": 8,
+  "target_sd_floor": 0.5,
+  "dropped_for_near_constant_target": [
+    "Te'omim"
+  ],
+  "operator_wins": 7,
+  "median_r2": {
+    "persistence_oracle": -2.2822,
+    "first_order_transfer": -0.2554,
+    "operator_full": 0.6408
+  },
+  "usable_caves_r2_positive": {
+    "first_order_transfer": 3,
+    "operator_full": 5
+  },
+  "median_rmse_rh_percent": {
+    "first_order_transfer": 7.178,
+    "operator_full": 3.562
+  },
+  "failure_cases_operator_negative": [
+    "Sela'",
+    "Murabba'at 2",
+    "Har Sifsof"
+  ],
+  "damping_diurnal_ratio_median": 0.184,
+  "damping_annual_ratio_median": 0.366,
+  "source": "ICCP Zenodo 10.5281/zenodo.17505739 (CC-BY-4.0)",
+  "note": "真实观测外部效度验证。目标近似常数的洞窟（RH 恒 100%）R² 无信息量，已由 target_sd 守卫剔除。洞 4/11 为失败案例，如实保留。"
+}

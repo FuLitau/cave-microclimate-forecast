@@ -1,0 +1,7 @@
+metric,model_lo,model_hi,lit_lo,lit_hi,pass
+outdoor_monthly_T_range,-6.22,25.65,-5.1,26.9,True
+indoor_monthly_T_range,2.08,22.34,3.0,20.3,True
+indoor_monthly_RH_range,24.3,40.14,22.7,53.5,True
+outdoor_monthly_RH_range,22.84,39.3,16.3,47.4,False
+annual_T_lag_months,1.0,1.0,1.0,1.0,True
+diurnal_T_lag_max_min,74.8,71.2,20.0,64.0,True

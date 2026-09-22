@@ -1,0 +1,10 @@
+{
+  "n_quantiles": 5,
+  "input_window": 168,
+  "h_max": 72,
+  "rh_crit": 67.0,
+  "ridge_beta": 10.0,
+  "n_features": 258,
+  "train_end": "2019-12-31",
+  "val_end": "2020-12-31"
+}

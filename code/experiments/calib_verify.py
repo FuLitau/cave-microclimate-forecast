@@ -1,0 +1,38 @@
+"""用默认参数跑一次标定核对，确认窟内统计量落在文献约束内。"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pandas as pd
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from experiments.calib_cave_params import evaluate, harmonic  # noqa: E402
+from src.physics.cave_model import CaveParams  # noqa: E402
+
+od = pd.read_csv(ROOT / "data" / "interim" / "power_hourly_mogao_2001_2025.csv",
+                 index_col=0, parse_dates=True).sort_index()
+od = od.loc["2010-01-01":"2019-12-31"]
+
+p = CaveParams()
+r = evaluate(od, p)
+print("默认参数标定核对")
+print("-" * 60)
+for k, v in r.items():
+    print(f"  {k:24s} {v}")
+
+a_out, _ = harmonic(od["T2M"])
+print(f"\n  窟外年均温 {od['T2M'].mean():.2f} degC -> 窟内 {r['T_in_mean']:.2f} degC "
+      f"(差 {r['T_in_mean'] - od['T2M'].mean():+.2f} K)")
+print(f"  窟外年振幅 {a_out:.2f} degC -> 窟内 {a_out * r['annual_amp_ratio_T']:.2f} degC")
+
+print("\n  文献实测对照（Gong et al. 2025, npj HS 13:173，第 71 窟，2019-2021 逐时）：")
+print("    窟内 RH  年均 30.8% / 最低 8.7% / 最高 80.0%")
+print("    日较差比 开门 0.276 / 闭窟 0.043（2020 疫情闭窟，天然双状态对照）")
+print("    年极差比 T 0.559 / RH 0.722")
+print("  文献对照（Zhang & Wang 2023, Heritage Science 11:158，第 87 窟）：")
+print("    窟内月均温 3.0-20.3 degC（年均约 11.7），窟外 -5.1-26.9（年均约 10.9）")
+print("    -> 窟内仅比窟外高约 +0.75 K；年周期 T 滞后约 1 个月")

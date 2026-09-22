@@ -1,0 +1,19 @@
+# 依赖
+# 环境实测：Python 3.12.3 / Windows；以下版本均已验证可用
+numpy>=2.0
+pandas>=2.2
+scipy>=1.11
+scikit-learn>=1.5
+requests>=2.31
+matplotlib>=3.8
+
+# 深度学习（CPU 版；如需 GPU 请按官方指引替换为 CUDA 轮子）
+# 安装命令：pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch>=2.4
+
+# 动态模态分解（含 HankelDMD，用于 Koopman 算子的参考实现与交叉验证）
+pydmd>=0.4
+
+# 评分规则（含 twcrps_ensemble，用于交叉验证自实现的 twCRPS）
+# 注意：要求 Python >= 3.12
+scoringrules>=0.11

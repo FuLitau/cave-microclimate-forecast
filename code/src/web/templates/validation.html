@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}标定与验证 · 石窟微气候风险预报看板{% endblock %}
+{% block body %}
+
+<h2>一、跨窟外部效度验证（留一窟设计）</h2>
+<div class="note" style="margin-bottom:12px">
+  <b>设计</b>：物理模型在<b>第 71 窟</b>上标定（Gong et al. 2025, npj Heritage Science 13:173）；
+  在<b>第 87 窟</b>上检验（Zhang &amp; Wang 2023, Heritage Science 11:158）。
+  <b>另一个洞窟、另一支团队、另一套传感器，标定第 71 窟时完全未使用。</b>
+</div>
+<table id="tCC"><thead><tr>
+  <th>指标</th><th class="num">模型</th><th class="num">第 87 窟实测</th><th>判定</th>
+  </tr></thead><tbody></tbody></table>
+<div class="note">
+  <b>可支持的说法</b>：模型学到的是窟内外传递结构的<b>共性</b>，而非过拟合单一洞窟。<br>
+  <b>不可支持的说法</b>：可精确复现任意洞窟——窟体几何与热物性仍为假设值。
+  报告中须表述为"跨窟量级一致性检验"。
+</div>
+
+<h2>二、物理模型参数标定</h2>
+<div class="note" style="margin-bottom:12px">
+  标定目标全部来自 <b>Gong et al. 2025 第 71 窟 Table 1</b>——2020 年疫情闭窟构成天然的
+  "门开 / 门关"双状态对照实验。<b>每个自由参数对应独立的观测约束</b>，不是用同一约束反复调参：
+  η 由日较差比标定 · 岩柱厚度由年极差比标定 · k_sorption 与 wall_pore_rh 由 RH 年均标定。
+</div>
+<div class="grid" style="grid-template-columns:1fr 1fr">
+  <div class="chart" id="cCal" style="height:340px"></div>
+  <div>
+    <table id="tCal"><thead><tr>
+      <th>eta</th><th class="num">k_sorp</th><th class="num">pore</th>
+      <th class="num">日比开</th><th class="num">日比关</th><th class="num">RH均值</th>
+      </tr></thead><tbody></tbody></table>
+    <div class="note">表中为扫描网格中综合误差最小的 5 组配置（完整网格见
+      <code>results/calib_cave_params.csv</code>）。</div>
+  </div>
+</div>
+
+<h2>三、文献出处对照（标定与验证所依据的实测值）</h2>
+<table>
+  <thead><tr><th>指标</th><th class="num">文献实测</th><th>出处</th></tr></thead>
+  <tbody>
+    <tr><td>日较差比 · 开门</td><td class="num">0.276</td>
+        <td>Gong et al. 2025, npj HS 13:173, Table 1（2019-05-01 开放日）</td></tr>
+    <tr><td>日较差比 · 闭窟</td><td class="num">0.043</td>
+        <td>同上（2020-05-01 疫情闭窟日）</td></tr>
+    <tr><td>年极差比 T / RH</td><td class="num">0.559 / 0.722</td>
+        <td>同上</td></tr>
+    <tr><td>窟内 RH 年均</td><td class="num">30.8%</td><td>同上（范围 8.7–80.0%）</td></tr>
+    <tr><td>窟内外 RH 相位差</td><td class="num">π/4（≥24 h 尺度）</td>
+        <td>同上 Fig. 11a-b（原文仅写 "~1/8 of a cycle"，未给"3 h"）</td></tr>
+    <tr><td>换气流量 · 开门 / 关门</td><td class="num">约 860 / 131 m³/h</td>
+        <td>Zhao et al. 2026, npj HS, DOI 10.1038/s40494-026-02955-0（第 45/46 窟示踪法）</td></tr>
+    <tr><td>年周期 T 滞后</td><td class="num">1 个月</td>
+        <td>Zhang &amp; Wang 2023, Heritage Science 11:158</td></tr>
+    <tr><td>盐害阈值（业务）</td><td class="num">62% RH / 1500 ppm CO₂</td>
+        <td>敦煌研究院官方业务口径（樊锦诗 2013 / 郭青林 2026 / 汪万福公开表述）</td></tr>
+    <tr><td>盐害阈值（学术）</td><td class="num">67% / 75%</td>
+        <td>Demas et al. 2015, DOI 10.1007/978-3-319-09000-9；
+            npj HS 2025, DOI 10.1038/s40494-025-01756-1</td></tr>
+  </tbody>
+</table>
+
+<h2>四、已声明的模型偏差（不隐藏）</h2>
+<table>
+  <thead><tr><th>项</th><th class="num">模型</th><th class="num">文献实测</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>窟内年均温 − 窟外</td><td class="num">+1.9 K</td><td class="num">+0.75 K</td>
+        <td>偏暖约 1.2 K。模型未显式建模夜间长波辐射冷却，用净辐射折减系数作等效补偿</td></tr>
+    <tr><td>游客使窟内 RH 峰值抬升</td><td class="num">+0.17 pp</td><td class="num">+11 pp</td>
+        <td><b>未复现</b>。文献值为"约 30 人入窟 5–6 min"的<b>短时脉冲</b>，
+            本模型用小时步长连续源会把它时间平均掉。同文又称呼吸排汗湿量仅约 5%
+            （且系转引），两数字只在脉冲解释下自洽</td></tr>
+    <tr><td>窟内 RH 上限</td><td class="num">90.4%</td><td class="num">80.0%</td><td>偏高</td></tr>
+  </tbody>
+</table>
+
+{% endblock %}
+{% block script %}
+<script>
+const mk=id=>echarts.init(document.getElementById(id),'dark');
+let C=null;
+function f(v,n=3){ return (v===null||v===undefined||isNaN(v))?'—':(+v).toFixed(n); }
+
+const CC_LABEL = {
+  outdoor_monthly_T_range:'窟外月均温范围 (°C)',
+  indoor_monthly_T_range:'窟内月均温范围 (°C)',
+  indoor_monthly_RH_range:'窟内月均 RH 范围 (%)',
+  outdoor_monthly_RH_range:'窟外月均 RH 范围 (%)',
+  annual_T_lag_months:'年周期 T 相位滞后 (月)',
+  diurnal_T_lag_max_min:'日周期 T 滞后 (min)'
+};
+
+fetch('/api/validation').then(r=>r.json()).then(d=>{
+  document.querySelector('#tCC tbody').innerHTML = (d.crosscave||[]).map(r=>{
+    const isRange = r.model_lo !== r.model_hi;
+    const m = isRange ? `[${f(r.model_lo)}, ${f(r.model_hi)}]` : f(r.model_lo,1);
+    const l = isRange ? `[${f(r.lit_lo)}, ${f(r.lit_hi)}]` : f(r.lit_lo,1);
+    const mark = r.pass ? '<span class="pill p0">通过</span>'
+                        : '<span class="pill p1">量级内</span>';
+    return `<tr><td>${CC_LABEL[r.metric]||r.metric}</td>
+            <td class="num">${m}</td><td class="num">${l}</td><td>${mark}</td></tr>`;
+  }).join('') || '<tr><td colspan="4">暂无数据，请先运行 validate_crosscave.py</td></tr>';
+
+  const cal = d.calibration||[];
+  document.querySelector('#tCal tbody').innerHTML = cal.map(r=>`<tr>
+    <td>${f(r.eta,2)}</td><td class="num">${(r.k_sorption||0).toExponential(0)}</td>
+    <td class="num">${f(r.wall_pore_rh,0)}</td>
+    <td class="num">${f(r.diurnal_ratio_open)}</td>
+    <td class="num">${f(r.diurnal_ratio_closed)}</td>
+    <td class="num">${f(r.RH_in_mean,1)}</td></tr>`).join('');
+
+  C = C || mk('cCal');
+  const TGT = {diurnal_ratio_open:0.276, diurnal_ratio_closed:0.043,
+               annual_range_ratio_T:0.559, annual_range_ratio_RH:0.722,
+               RH_in_mean:30.8};
+  const keys = Object.keys(TGT);
+  const best = cal[0] || {};
+  C.setOption({backgroundColor:'transparent',
+    title:{text:'最优标定配置 vs 文献实测（归一化）', left:'center',
+           textStyle:{fontSize:13,color:'#8fa0bf'}},
+    tooltip:{trigger:'axis'}, legend:{bottom:0, textStyle:{color:'#8fa0bf'}},
+    grid:{left:60,right:30,top:50,bottom:56},
+    xAxis:{type:'category',
+      data:['日比开','日比关','年比T','年比RH','RH均值'],
+      axisLine:{lineStyle:{color:'#2a3550'}}},
+    yAxis:{type:'value', name:'实测=1', splitLine:{lineStyle:{color:'#222c42'}}},
+    series:[
+      {name:'模型/实测', type:'bar', data:keys.map(k=>
+        (best[k]!=null && TGT[k]) ? +(best[k]/TGT[k]).toFixed(3) : null),
+       itemStyle:{color:'#4da3ff'}},
+      {name:'完全吻合', type:'line', data:keys.map(()=>1),
+       lineStyle:{color:'#3ecf8e',type:'dashed'}, symbol:'none'}
+    ]});
+});
+</script>
+{% endblock %}

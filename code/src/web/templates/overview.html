@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}风险总览 · 石窟微气候风险预报看板{% endblock %}
+{% block body %}
+
+<div class="grid cards">
+  <div class="card"><div class="k">窟内 RH 年均（2021–2025）</div>
+    <div class="v">{{ stats.get('RH_in_mean','—') }}<span class="u">%</span></div></div>
+  <div class="card"><div class="k">> 62% 业务预警占比</div>
+    <div class="v" style="color:var(--warn)">{{ stats.get('frac_gt62','—') }}<span class="u">%</span></div></div>
+  <div class="card"><div class="k">> 67% 潮解起始占比</div>
+    <div class="v" style="color:var(--warn)">{{ stats.get('frac_gt67','—') }}<span class="u">%</span></div></div>
+  <div class="card"><div class="k">> 75% 吸湿突变占比</div>
+    <div class="v" style="color:var(--danger)">{{ stats.get('frac_gt75','—') }}<span class="u">%</span></div></div>
+  <div class="card"><div class="k">窟内 RH 量程</div>
+    <div class="v" style="font-size:20px">{{ stats.get('RH_in_min','—') }} – {{ stats.get('RH_in_max','—') }}<span class="u">%</span></div></div>
+  <div class="card"><div class="k">统计时段</div>
+    <div class="v" style="font-size:13px;line-height:1.6">{{ stats.get('period','—') }}</div>
+    <div class="k" style="margin-top:6px">{{ '{:,}'.format(stats.get('n_hours',0)) }} 小时</div></div>
+</div>
+
+<h2>未来 24–72 小时窟内风险预报（三种代表性场景）</h2>
+<div class="ctl">
+  <label>场景</label>
+  <select id="scenario"></select>
+  <span class="note" id="origin"></span>
+  <span id="advice"></span>
+</div>
+<div class="chart" id="c1" style="height:430px"></div>
+
+<h2>窟外气象驱动</h2>
+<div class="chart" id="c2" style="height:320px"></div>
+
+<div class="warnbox" style="margin-top:16px">
+  <b>判级规则（保守决策）</b>：采用上分位数而非均值判级——"关闭洞窟"的误判代价远高于
+  "多限流一天"，漏报一次盐害是不可逆的。<br>
+  <b>阈值出处</b>：62% 为敦煌研究院官方业务口径（樊锦诗 2013 / 郭青林 2026 / 汪万福公开表述，
+  配套 CO₂ 阈值 1500 ppm）；67% 为可溶盐潮解起始（Demas et al. 2015, DOI 10.1007/978-3-319-09000-9）；
+  75% 为莫高窟含盐地仗吸湿与渗透性突变点（npj Heritage Science 2025, DOI 10.1038/s40494-025-01756-1）。
+</div>
+
+<div class="note">
+  <b>判读说明</b>：图中"</b>窟内 RH 预报"由<b>延迟嵌入 Koopman 输运算子</b>在
+  <b>t 时刻之前的外场观测</b>上直接多步读出得到，严格因果、不含未来信息；
+  "实况"为物理合成标签。预报曲线与实况的偏离程度即模型的多步误差，随提前量增大而增大。
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script>
+const TH = {{ thresholds|tojson }};
+let DATA = null, CH1 = null, CH2 = null;
+
+function mk(el){ return echarts.init(document.getElementById(el), 'dark'); }
+
+fetch('/api/forecast').then(r=>r.json()).then(d=>{
+  DATA = d;
+  const sel = document.getElementById('scenario');
+  d.scenarios.forEach((s,i)=>{
+    const o = document.createElement('option');
+    o.value = i; o.text = s.scenario + '（起点 ' + s.origin.slice(0,16) + '）';
+    sel.appendChild(o);
+  });
+  sel.onchange = ()=> draw(+sel.value);
+  draw(0);
+  window.addEventListener('resize', ()=>{ CH1&&CH1.resize(); CH2&&CH2.resize(); });
+});
+
+function draw(i){
+  const s = DATA.scenarios[i];
+  document.getElementById('origin').textContent = '预报起点：' + s.origin.slice(0,16) + ' UTC';
+  const lv = s.level[s.level.length-1];
+  const cls = ['p0','p1','p2'][lv], txt = ['正常开放','限流','关闭高危洞窟'][lv];
+  document.getElementById('advice').innerHTML =
+    '<span class="pill '+cls+'">72h 后建议：'+txt+'</span>';
+
+  CH1 = CH1 || mk('c1');
+  const markLine = (v,c,n)=>({yAxis:v, lineStyle:{color:c,type:'dashed'},
+      label:{formatter:n+' '+v+'%', position:'insideEndTop', color:c}});
+  CH1.setOption({
+    backgroundColor:'transparent',
+    title:{text:s.scenario, left:'center', textStyle:{fontSize:13,color:'#8fa0bf'}},
+    tooltip:{trigger:'axis'},
+    legend:{top:26, textStyle:{color:'#8fa0bf'}},
+    grid:{left:60,right:30,top:76,bottom:44},
+    xAxis:{type:'category', data:s.step_h.map(h=>h+'h'),
+           axisLine:{lineStyle:{color:'#2a3550'}}},
+    yAxis:{type:'value', name:'窟内 RH (%)', min:0, max:100,
+           splitLine:{lineStyle:{color:'#222c42'}}},
+    series:[
+      {name:'窟内 RH 预报', type:'line', smooth:true, data:s.RH_pred,
+       lineStyle:{width:2.5,color:'#4da3ff'}, itemStyle:{color:'#4da3ff'},
+       markLine:{silent:true, symbol:'none', data:[
+         markLine(TH.warn,'#f5b74e','预警'), markLine(TH.crit,'#ff9f43','潮解'),
+         markLine(TH.close,'#ff5f6d','关闭')]}},
+      {name:'实况（合成标签）', type:'line', smooth:true, data:s.RH_true,
+       lineStyle:{width:1.6,type:'dotted',color:'#3ecf8e'}, itemStyle:{color:'#3ecf8e'}},
+      {name:'窟外 RH', type:'line', smooth:true, data:s.RH_out,
+       lineStyle:{width:1.4,color:'#8fa0bf'}, itemStyle:{color:'#8fa0bf'}}
+    ]
+  });
+
+  CH2 = CH2 || mk('c2');
+  CH2.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'axis'},
+    legend:{top:6, textStyle:{color:'#8fa0bf'}},
+    grid:{left:60,right:60,top:44,bottom:44},
+    xAxis:{type:'category', data:s.step_h.map(h=>h+'h'),
+           axisLine:{lineStyle:{color:'#2a3550'}}},
+    yAxis:[{type:'value', name:'窟外气温 (°C)', splitLine:{lineStyle:{color:'#222c42'}}},
+           {type:'value', name:'窟外 RH (%)', max:100, splitLine:{show:false}}],
+    series:[
+      {name:'窟外气温', type:'line', smooth:true, data:s.T_out,
+       lineStyle:{width:2,color:'#f5b74e'}, itemStyle:{color:'#f5b74e'}},
+      {name:'窟外 RH', type:'line', yAxisIndex:1, smooth:true, data:s.RH_out,
+       lineStyle:{width:2,color:'#4da3ff'}, itemStyle:{color:'#4da3ff'}}
+    ]
+  });
+}
+</script>
+{% endblock %}

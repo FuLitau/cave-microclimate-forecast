@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}模型对比 · 石窟微气候风险预报看板{% endblock %}
+{% block body %}
+
+<h2>多步预报精度与事件检测（测试段 2021–2025）</h2>
+<div class="ctl">
+  <label>预报时效</label>
+  <select id="hz"><option value="24">24 h</option><option value="48">48 h</option>
+    <option value="72">72 h</option></select>
+  <label>阈值</label>
+  <select id="th"><option value="62">62%（业务预警）</option>
+    <option value="67">67%（潮解起始）</option><option value="75">75%（吸湿突变）</option></select>
+</div>
+<div class="grid" style="grid-template-columns:1fr 1fr">
+  <div class="chart" id="cAuc" style="height:360px"></div>
+  <div class="chart" id="cAcc" style="height:360px"></div>
+</div>
+
+<h2>逐点精度</h2>
+<table id="tAcc"><thead><tr>
+  <th>模型</th><th class="num">RMSE</th><th class="num">MAE</th><th class="num">R²</th>
+  <th class="num">偏差</th></tr></thead><tbody></tbody></table>
+
+<h2>超阈事件检测（决策阈值在验证段标定，测试段只应用）</h2>
+<table id="tEv"><thead><tr>
+  <th>模型</th><th class="num">基准率</th><th class="num">报警率</th>
+  <th class="num">查准</th><th class="num">查全</th><th class="num">F1</th>
+  <th class="num">AUC</th></tr></thead><tbody></tbody></table>
+
+<div class="warnbox" style="margin-top:16px">
+  <b>两个必须注意的评测口径</b>：<br>
+  ① <b>点预报不能用于事件检测</b>——事件率仅约 1%，"点预报 ≥ 阈值"永不触发，
+  实测所有模型 F1 恒为 0（含 oracle）。因此决策阈值在<b>验证段</b>标定、测试段只应用，无信息泄露。<br>
+  ② <b>Persistence(oracle) 不可部署</b>——它需要<b>窟内实测</b>作为输入，而本场景没有窟内传感器。
+  它只作天花板参照，<b>不用于垫底比较</b>；可部署对比以 Climatology 与 Persistence-operator 为准。
+</div>
+
+<h2>A / B / C 消融：风险对齐训练（诚实记录）</h2>
+<table id="tAbc"><thead><tr>
+  <th>时效</th><th>阈值</th><th>方案</th><th class="num">点R²</th>
+  <th class="num">报警率</th><th class="num">F1</th><th class="num">AUC</th>
+  </tr></thead><tbody></tbody></table>
+<div class="note">
+  A = MSE（现有全部工作的做法）；B = MSE + 固定阈值 twCRPS；C = MSE + <b>算子导出内生权重</b>（原提案）。<br>
+  <b>结论：C 优于 B 的比例为 0/9，预登记判据未通过。</b>原因：C 的报警率仅为 B 的约 1/5，
+  内生权重把模型推得过于保守。<b>因此本项目不声称"内生权重"是创新点</b>，
+  创新点降级为"风险对齐训练"本身——B vs A 的增益是实打实的。
+</div>
+
+{% endblock %}
+{% block script %}
+<script>
+let EV=[], ACC=[], ABC=[], C1=null, C2=null;
+const mk=id=>echarts.init(document.getElementById(id),'dark');
+
+fetch('/api/comparison').then(r=>r.json()).then(d=>{
+  ACC=d.accuracy||[]; EV=d.events||[]; renderAcc(); renderEv();
+  window.addEventListener('resize',()=>{C1&&C1.resize();C2&&C2.resize();});
+});
+fetch('/api/abc').then(r=>r.json()).then(d=>{ABC=d||[]; renderAbc();});
+document.getElementById('hz').onchange=renderEv;
+document.getElementById('th').onchange=renderEv;
+
+function renderAcc(){
+  const rows = ACC.filter(r=>r.horizon_h==24)
+    .sort((a,b)=>b.R2-a.R2)
+    .map(r=>`<tr><td>${r.model}</td><td class="num">${f(r.RMSE)}</td>
+      <td class="num">${f(r.MAE)}</td><td class="num">${f(r.R2,4)}</td>
+      <td class="num">${f(r.bias)}</td></tr>`).join('');
+  document.querySelector('#tAcc tbody').innerHTML = rows;
+  C2 = C2 || mk('cAcc');
+  const d = ACC.filter(r=>r.horizon_h==24).sort((a,b)=>b.R2-a.R2);
+  C2.setOption({backgroundColor:'transparent', title:{text:'点精度 R²（24 h）',
+      left:'center', textStyle:{fontSize:13,color:'#8fa0bf'}},
+    tooltip:{trigger:'axis'}, grid:{left:150,right:40,top:50,bottom:36},
+    xAxis:{type:'value', splitLine:{lineStyle:{color:'#222c42'}}},
+    yAxis:{type:'category', data:d.map(r=>r.model).reverse(),
+           axisLabel:{fontSize:11}, axisLine:{lineStyle:{color:'#2a3550'}}},
+    series:[{type:'bar', data:d.map(r=>r.R2).reverse(),
+      itemStyle:{color:p=>['#ff5f6d','#8fa0bf','#4da3ff','#3ecf8e'][Math.min(3,p.dataIndex)]}}]});
+}
+function f(v,n=3){ return (v===null||v===undefined||isNaN(v))?'—':(+v).toFixed(n); }
+
+function renderEv(){
+  const h=document.getElementById('hz').value, t=document.getElementById('th').value;
+  const pref={'62':'62%','67':'67%','75':'75%'}[t];
+  const d = EV.filter(r=>r.horizon_h==h && String(r.threshold).startsWith(pref))
+              .sort((a,b)=>b.AUC-a.AUC);
+  document.querySelector('#tEv tbody').innerHTML = d.map(r=>`<tr>
+    <td>${r.model}</td><td class="num">${f(r.base_rate,4)}</td>
+    <td class="num">${f(r.alarm_rate,4)}</td><td class="num">${f(r.precision)}</td>
+    <td class="num">${f(r.recall)}</td><td class="num">${f(r.F1)}</td>
+    <td class="num">${f(r.AUC)}</td></tr>`).join('');
+  C1 = C1 || mk('cAuc');
+  C1.setOption({backgroundColor:'transparent',
+    title:{text:`事件检测 AUC（${h} h，${pref}）`, left:'center',
+           textStyle:{fontSize:13,color:'#8fa0bf'}},
+    tooltip:{trigger:'axis'}, grid:{left:150,right:40,top:50,bottom:36},
+    xAxis:{type:'value', min:0.4, max:1, splitLine:{lineStyle:{color:'#222c42'}}},
+    yAxis:{type:'category', data:d.map(r=>r.model).reverse(), axisLabel:{fontSize:11},
+           axisLine:{lineStyle:{color:'#2a3550'}}},
+    series:[{type:'bar', data:d.map(r=>r.AUC).reverse(),
+      itemStyle:{color:p=>p.data<0.5?'#ff5f6d':(p.data<0.75?'#f5b74e':'#3ecf8e')},
+      markLine:{silent:true, symbol:'none',
+        data:[{xAxis:0.5, lineStyle:{color:'#ff5f6d',type:'dashed'},
+               label:{formatter:'随机 0.5',color:'#ff5f6d'}}]}}]});
+}
+function renderAbc(){
+  document.querySelector('#tAbc tbody').innerHTML = ABC.map(r=>`<tr>
+    <td>${r.horizon_h} h</td><td>${r.threshold}</td><td>${r['mode']}</td>
+    <td class="num">${f(r.pt_R2,4)}</td><td class="num">${f(r.pred_rate,4)}</td>
+    <td class="num">${f(r.F1)}</td><td class="num">${f(r.AUC)}</td></tr>`).join('');
+}
+</script>
+{% endblock %}

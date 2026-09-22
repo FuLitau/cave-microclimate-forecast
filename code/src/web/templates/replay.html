@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}离线回放 · 石窟微气候风险预报看板{% endblock %}
+{% block body %}
+
+<h2>历史序列回放（离线模式）</h2>
+<div class="ctl">
+  <label>起始</label><input type="date" id="d0" value="2025-01-01">
+  <label>结束</label><input type="date" id="d1" value="2025-12-31">
+  <button onclick="load()" style="background:var(--accent);color:#fff;border:none;
+    border-radius:6px;padding:7px 16px;cursor:pointer;font-size:13px">加载</button>
+  <span class="note" id="info"></span>
+</div>
+
+<div class="chart" id="cRh" style="height:400px"></div>
+<div class="chart" id="cT" style="height:300px;margin-top:16px"></div>
+<div class="chart" id="cQ" style="height:240px;margin-top:16px"></div>
+
+<div class="warnbox" style="margin-top:16px">
+  <b>离线模式说明</b>：本页所有数据来自本地文件，<b>无任何外部网络依赖</b>，
+  断网环境下可完整运行——面向野外台站、应急指挥车等网络不稳定场景。
+  系统不依赖数据库即可回放历史序列，是"在线/离线双模式"设计的离线一侧。
+</div>
+
+<div class="note">
+  <b>读图提示</b>：窟内 RH（上）与窟外 RH 的对比展示了"衰减与滞后"——窟内波动显著更平缓、
+  峰值出现更晚。窟内气温（中）相对窟外被大幅削平。换气量 Q（下）在开放时段（约 8–18 时）
+  跃升，是窟内外交换的主要通道，也是"门开/门关双状态"结构的直接体现。
+</div>
+
+{% endblock %}
+{% block script %}
+<script>
+const TH = {{ thresholds|tojson }};
+const mk=id=>echarts.init(document.getElementById(id),'dark');
+let C1,C2,C3;
+function load(){
+  const s=document.getElementById('d0').value, e=document.getElementById('d1').value;
+  fetch(`/api/history?start=${s}&end=${e}`).then(r=>r.json()).then(d=>{
+    if(!d.time || !d.time.length){ document.getElementById('info').textContent='该区间无数据'; return; }
+    document.getElementById('info').textContent =
+      `共 ${d.time.length} 个抽样点（原始 ${d.n_total} 点，抽样步长 ${d.step}）`;
+    draw(d);
+  });
+}
+function draw(d){
+  const hline=(v,c,n)=>({yAxis:v, lineStyle:{color:c,type:'dashed'},
+    label:{formatter:n+' '+v+'%', position:'insideEndTop', color:c}});
+
+  C1 = C1||mk('cRh');
+  C1.setOption({backgroundColor:'transparent',
+    title:{text:'窟内 / 窟外 相对湿度', left:'center', textStyle:{fontSize:13,color:'#8fa0bf'}},
+    tooltip:{trigger:'axis'}, legend:{top:24, textStyle:{color:'#8fa0bf'}},
+    grid:{left:60,right:30,top:70,bottom:40},
+    xAxis:{type:'category', data:d.time, axisLine:{lineStyle:{color:'#2a3550'}}},
+    yAxis:{type:'value', name:'RH (%)', min:0, max:100, splitLine:{lineStyle:{color:'#222c42'}}},
+    series:[
+      {name:'窟内 RH（合成标签）', type:'line', showSymbol:false, data:d.RH_in,
+       lineStyle:{width:2,color:'#4da3ff'}, itemStyle:{color:'#4da3ff'},
+       markLine:{silent:true, symbol:'none', data:[
+         hline(TH.warn,'#f5b74e','预警'), hline(TH.crit,'#ff9f43','潮解'),
+         hline(TH.close,'#ff5f6d','关闭')]}},
+      {name:'窟外 RH', type:'line', showSymbol:false, data:d.RH_out,
+       lineStyle:{width:1.4,color:'#8fa0bf'}, itemStyle:{color:'#8fa0bf'}}
+    ]});
+
+  C2 = C2||mk('cT');
+  C2.setOption({backgroundColor:'transparent',
+    title:{text:'窟内 / 窟外 气温（衰减对比）', left:'center',
+           textStyle:{fontSize:13,color:'#8fa0bf'}},
+    tooltip:{trigger:'axis'}, legend:{top:24, textStyle:{color:'#8fa0bf'}},
+    grid:{left:60,right:30,top:70,bottom:40},
+    xAxis:{type:'category', data:d.time, axisLine:{lineStyle:{color:'#2a3550'}}},
+    yAxis:{type:'value', name:'°C', splitLine:{lineStyle:{color:'#222c42'}}},
+    series:[
+      {name:'窟内气温（合成标签）', type:'line', showSymbol:false, data:d.T_in,
+       lineStyle:{width:2,color:'#f5b74e'}, itemStyle:{color:'#f5b74e'}},
+      {name:'窟外气温', type:'line', showSymbol:false, data:d.T_out,
+       lineStyle:{width:1.4,color:'#8fa0bf'}, itemStyle:{color:'#8fa0bf'}}
+    ]});
+
+  C3 = C3||mk('cQ');
+  C3.setOption({backgroundColor:'transparent',
+    title:{text:'通风体积流量 Q（门开/门关双状态）', left:'center',
+           textStyle:{fontSize:13,color:'#8fa0bf'}},
+    tooltip:{trigger:'axis'}, grid:{left:60,right:30,top:52,bottom:40},
+    xAxis:{type:'category', data:d.time, axisLine:{lineStyle:{color:'#2a3550'}}},
+    yAxis:{type:'value', name:'m³/h', splitLine:{lineStyle:{color:'#222c42'}}},
+    series:[{name:'Q', type:'line', showSymbol:false, data:d.Q_m3h,
+      areaStyle:{opacity:.18}, lineStyle:{width:1.2,color:'#3ecf8e'},
+      itemStyle:{color:'#3ecf8e'}}]});
+}
+window.addEventListener('resize',()=>{[C1,C2,C3].forEach(c=>c&&c.resize());});
+load();
+</script>
+{% endblock %}
