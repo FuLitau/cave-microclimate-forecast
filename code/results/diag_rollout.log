@@ -1,0 +1,24 @@
+[1] 外场数据 219,144 行 x 10 要素
+[2] 复用已缓存的窟内合成标签 cave_synthetic_2001_2025.csv
+[3] 全序列构造提升特征（p = 5 驱动，48 阶快变延迟）...
+    Psi 形状 (219144, 258)，用时 1.3s
+[4] 切分：训练 175,297 h / 测试 43,847 h
+[5] 算子拟合（含 K 演化矩阵）完成，用时 2.0s
+    谱半径 max|λ| = 0.988088
+    h= 6h  direct       R2=+0.66833  RMSE=  6.2011
+    h= 6h  rollout_Kh   R2=+0.50497  RMSE=  7.5757
+    h=12h  direct       R2=+0.60336  RMSE=  6.7815
+    h=12h  rollout_Kh   R2=+0.42345  RMSE=  8.1762
+    h=24h  direct       R2=+0.54469  RMSE=  7.2666
+    h=24h  rollout_Kh   R2=+0.31144  RMSE=  8.9362
+    h=48h  direct       R2=+0.47457  RMSE=  7.8071
+    h=48h  rollout_Kh   R2=+0.18296  RMSE=  9.7354
+    h=72h  direct       R2=+0.42868  RMSE=  8.1428
+    h=72h  rollout_Kh   R2=+0.11746  RMSE= 10.1205
+
+[6] 判读
+    h=72h：direct R²=+0.42868 vs rollout R²=+0.11746
+    -> K^h 前推劣于直接读出，算子应定位为「室外轨迹上的可微输运读出」，
+       而非可自行演化的动力系统（慢变滑动均值是外生汇总量）。
+
+结果已写入 F:\Desktop\ai气象大赛\code\results\diag_rollout.csv 与 diag_rollout.json

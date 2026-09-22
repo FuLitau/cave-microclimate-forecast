@@ -3,7 +3,16 @@
   "input_window": 168,
   "h_max": 72,
   "rh_crit": 67.0,
-  "ridge_beta": 10.0,
+  "ridge_beta": 0.001,
+  "ridge_beta_val_r2": 0.8785,
+  "ridge_beta_grid": [
+    0.001,
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0
+  ],
   "n_features": 258,
   "train_end": "2019-12-31",
   "val_end": "2020-12-31"

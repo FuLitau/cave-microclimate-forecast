@@ -46,6 +46,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -53,7 +54,13 @@ import pandas as pd
 from ..physics.cave_model import esat_pa, rh_to_vapor_density
 
 #: 参与建模的室外驱动要素（缺列时自动跳过）。
-DEFAULT_DRIVERS = ["T2M", "RH2M", "WS10M", "PS", "ALLSKY_SFC_SW_DWN"]
+#:
+#: 气压用 **PSC（corrected station pressure）而不是 PS**。POWER 服务返回的
+#: ``PS`` 并未订正到窟址高程，莫高窟站点口径下均值 83.53 kPa；而窟址 1140 m
+#: 对应的真实站压均值是 88.69 kPa，由 ``PSC`` 给出（二者相关 0.9705，系统偏
+#: 差 +5.16 kPa / +6.17%）。水汽密度换算 :func:`rh_to_vapor_density` 与 Magnus
+#: 比值项都直接吃这一列的绝对值，所以必须用真实站压。
+DEFAULT_DRIVERS = ["T2M", "RH2M", "WS10M", "PSC", "ALLSKY_SFC_SW_DWN"]
 
 #: 多时间尺度滑动均值窗口（小时）：1 天 / 3 天 / 7 天 / 30 天 / 90 天 / 365 天。
 DEFAULT_SLOW_WINDOWS = (24, 72, 168, 720, 2160, 8760)
@@ -223,7 +230,38 @@ class KoopmanTransport:
         """
         return np.column_stack([Psi_s, np.ones(len(Psi_s))])
 
-    def fit(self, outdoor: pd.DataFrame, target: np.ndarray, *, fit_koopman: bool = True) -> "KoopmanTransport":
+    def feature_matrix(self, outdoor: pd.DataFrame, *,
+                       names_out: list[str] | None = None) -> np.ndarray:
+        """按本算子配置构造特征矩阵。
+
+        单独暴露这个方法，是为了支持**「先在全序列上构造特征、再按时间切分」**
+        这一唯一正确的用法：慢变滑动均值窗口最长 8760 h（1 年），若在训练段 /
+        测试段切片上分别调用 :func:`build_features`，窗口会在每个切片的起点
+        重新起步，测试段前整整一年的慢变特征都是错的，训练段与测试段的特征
+        分布也不再一致。请在全序列上调用一次，再用同一个行索引去切。
+        """
+        return build_features(outdoor, self.cfg, names_out=names_out)
+
+    def _ensure_names(self, outdoor: pd.DataFrame) -> None:
+        """回填 :attr:`feature_names_`。
+
+        特征名完全由 ``cfg``（驱动列、延迟阶数、慢变窗口）决定，与数据无关，
+        因此传入外部 ``Psi`` 时可以用两行样本把名字重算出来——否则
+        ``feature_names_`` 会是空列表，:meth:`readout_importance` /
+        :meth:`group_importance` 的物理归因会直接报错。
+        """
+        if self.feature_names_:
+            return
+        self.feature_names_ = []
+        # 只需要名字，但仍要给足行数：延迟坐标在序列开头是 NaN，行数不足时
+        # build_features 会对"整列全 NaN"的延迟列做均值回填并发 RuntimeWarning。
+        n = min(len(outdoor), self.cfg.n_fast_lags + 2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            build_features(outdoor.iloc[:n], self.cfg, names_out=self.feature_names_)
+
+    def fit(self, outdoor: pd.DataFrame, target: np.ndarray, *,
+            fit_koopman: bool = True, Psi: np.ndarray | None = None) -> "KoopmanTransport":
         """闭式拟合输运算子。
 
         Parameters
@@ -236,9 +274,20 @@ class KoopmanTransport:
             是否同时拟合演化矩阵 ``K``（仅用于谱分析，推断不需要）。
             ``K`` 的维度是 p x p，当 p 较大时内存开销为 O(p^2)，
             若只需读出可置为 False。
+        Psi : ndarray, optional
+            **已构造好的**特征矩阵，形状须与 ``outdoor`` 逐行对齐。
+            提供时不再内部调用 :func:`build_features`；调用方应使用
+            :meth:`feature_matrix` 在**全序列**上构造后按训练段行索引切片，
+            以免慢变窗口在切片起点重启（见 :meth:`feature_matrix`）。
         """
         self.feature_names_ = []
-        Psi = build_features(outdoor, self.cfg, names_out=self.feature_names_)
+        if Psi is None:
+            Psi = build_features(outdoor, self.cfg, names_out=self.feature_names_)
+        elif len(Psi) != len(outdoor):
+            raise ValueError(
+                f"Psi 行数 {len(Psi)} 与 outdoor 行数 {len(outdoor)} 不一致；"
+                "Psi 必须由全序列构造后按同一行索引切出。")
+        self._ensure_names(outdoor)
         Psi_s = self._standardize_fit(Psi)
         self.n_features_in_ = Psi_s.shape[1]
 
@@ -288,9 +337,18 @@ class KoopmanTransport:
             raise RuntimeError("请先调用 fit()")
         return self._add_intercept(self.transform(Psi)) @ self.w_
 
-    def predict(self, outdoor: pd.DataFrame) -> np.ndarray:
-        """由外场驱动序列端到端预测窟内微环境代理。"""
-        Psi = build_features(outdoor, self.cfg)
+    def predict(self, outdoor: pd.DataFrame, *,
+                Psi: np.ndarray | None = None) -> np.ndarray:
+        """由外场驱动序列端到端预测窟内微环境代理。
+
+        ``Psi`` 同 :meth:`fit`：传入全序列构造、按行切片的特征矩阵时，
+        不做内部特征构造（多切片场景下必须这样用）。
+        """
+        if Psi is None:
+            Psi = build_features(outdoor, self.cfg)
+        elif len(Psi) != len(outdoor):
+            raise ValueError(
+                f"Psi 行数 {len(Psi)} 与 outdoor 行数 {len(outdoor)} 不一致。")
         return self.predict_features(Psi)
 
     def rollout_features(self, Psi: np.ndarray, steps: int) -> np.ndarray:
@@ -319,15 +377,24 @@ class KoopmanTransport:
         Psi_h = self.rollout_features(Psi, steps)
         return self._add_intercept(Psi_h) @ self.w_
 
-    def fit_direct(self, outdoor: pd.DataFrame, target: np.ndarray, horizon: int):
+    def fit_direct(self, outdoor: pd.DataFrame, target: np.ndarray, horizon: int, *,
+                   Psi: np.ndarray | None = None):
         """**直接多步**策略：为每个时效单独拟合一个读出层。
 
         与 rollout 相比，直接策略不假设特征子空间在 :math:`h` 步内不变，
         通常更准，但需要为每个时效单独训练、且外推到训练时效之外没有依据。
         两者在实验中作为对照，用于回答"Koopman 前推是否损失精度"。
+
+        ``Psi`` 同 :meth:`fit`：**多切片场景必须传入全序列构造的特征切片**，
+        否则慢变窗口在切片起点重启，训练段与测试段的特征分布不一致。
         """
-        self.feature_names_ = []
-        Psi = build_features(outdoor, self.cfg, names_out=self.feature_names_)
+        if Psi is None:
+            self.feature_names_ = []
+            Psi = build_features(outdoor, self.cfg, names_out=self.feature_names_)
+        elif len(Psi) != len(outdoor):
+            raise ValueError(
+                f"Psi 行数 {len(Psi)} 与 outdoor 行数 {len(outdoor)} 不一致。")
+        self._ensure_names(outdoor)
         if self.mu_ is None:
             self._standardize_fit(Psi)
         Z = self._add_intercept(self.transform(Psi))
@@ -347,16 +414,22 @@ class KoopmanTransport:
                             Zo.T @ yo / n)
         return w
 
-    def predict_direct(self, outdoor: pd.DataFrame, w: np.ndarray) -> np.ndarray:
-        """用 :meth:`fit_direct` 得到的权重做直接多步预报。"""
-        Psi = build_features(outdoor, self.cfg)
+    def predict_direct(self, outdoor: pd.DataFrame, w: np.ndarray, *,
+                       Psi: np.ndarray | None = None) -> np.ndarray:
+        """用 :meth:`fit_direct` 得到的权重做直接多步预报。``Psi`` 语义同 :meth:`fit`。"""
+        if Psi is None:
+            Psi = build_features(outdoor, self.cfg)
+        elif len(Psi) != len(outdoor):
+            raise ValueError(
+                f"Psi 行数 {len(Psi)} 与 outdoor 行数 {len(outdoor)} 不一致。")
         return self._add_intercept(self.transform(Psi)) @ w
 
     # ---------------- 分位数读出（修「极值被压缩」） ----------------
 
     def fit_direct_quantile(self, outdoor: pd.DataFrame, target: np.ndarray,
                             horizon: int, tau: float = 0.9, *,
-                            n_iter: int = 25, tol: float = 1e-7):
+                            n_iter: int = 25, tol: float = 1e-7,
+                            Psi: np.ndarray | None = None):
         """**直接多步 + 分位数（pinball）读出**，用 IRLS 求解。
 
         为什么需要它（本项目的关键诊断）
@@ -386,7 +459,12 @@ class KoopmanTransport:
             目标分位水平。风险预警取上分位（如 0.9）；0.5 即中位数回归。
         """
         self.feature_names_ = []
-        Psi = build_features(outdoor, self.cfg, names_out=self.feature_names_)
+        if Psi is None:
+            Psi = build_features(outdoor, self.cfg, names_out=self.feature_names_)
+        elif len(Psi) != len(outdoor):
+            raise ValueError(
+                f"Psi 行数 {len(Psi)} 与 outdoor 行数 {len(outdoor)} 不一致。")
+        self._ensure_names(outdoor)
         if self.mu_ is None:
             self._standardize_fit(Psi)
         Z = self._add_intercept(self.transform(Psi))
@@ -419,9 +497,10 @@ class KoopmanTransport:
             w = w_new
         return w
 
-    def predict_quantile(self, outdoor: pd.DataFrame, w: np.ndarray) -> np.ndarray:
+    def predict_quantile(self, outdoor: pd.DataFrame, w: np.ndarray, *,
+                         Psi: np.ndarray | None = None) -> np.ndarray:
         """用 :meth:`fit_direct_quantile` 得到的权重做分位数预报。"""
-        return self.predict_direct(outdoor, w)
+        return self.predict_direct(outdoor, w, Psi=Psi)
 
     # ---------------- 物理可解释性 ----------------
 

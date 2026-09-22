@@ -135,25 +135,52 @@ def exceedance_duration_error(y_true: np.ndarray, y_pred: np.ndarray,
 class FirstOrderTransfer:
     """初稿所用的"文献标定一阶热湿传递函数"。
 
-    :math:`y_t = a\\,y_{t-1} + b\\,x_t + c`，即幅度衰减 + 时间滞后的离散一阶实现。
-    参数由最小二乘拟合，滞后通过 :math:`x_{t-\\tau}` 显式给出。
+    初稿原文形式是**静态查表传递**：:math:`RH_{in}(t) = a\\,RH_{out}(t-\\Delta) + b`，
+    系数 a 与滞后 Δ 由文献摘录的衰减比与滞后量给出。这里把它写成同一形式、
+    只把系数换成最小二乘拟合（对初稿更有利），作为"初稿路线"的对照。
+
+    **不含自回归项是有意的**。早期版本把它写成 :math:`y_t = a y_{t-1} + b x_t + c`
+    再对整段测试序列递归推演，拟合出的 a ≈ 1.0009 略大于 1，几百步后即数值
+    爆炸（R² = -3.3e22）。那只说明"递归写法本身不稳定"，**不能**用来论证
+    初稿的传递函数不行——那是稻草人对照。两种口径都保留：
+
+    * :meth:`predict` —— 静态传递（初稿原文形式，**结论以它为准**）；
+    * :meth:`predict_recursive` —— 旧口径，**仅作误差累积的定性说明**。
     """
 
     def __init__(self, lag_h: int = 3):
         self.lag_h = lag_h
         self.coef_: np.ndarray | None = None
+        self.coef_rec_: np.ndarray | None = None
+
+    @staticmethod
+    def _lagged(x: np.ndarray, lag: int) -> np.ndarray:
+        xl = np.roll(x, lag)
+        xl[: lag] = x[: lag]
+        return xl
 
     def fit(self, x: np.ndarray, y: np.ndarray) -> "FirstOrderTransfer":
-        xl = np.roll(x, self.lag_h)
-        xl[: self.lag_h] = x[: self.lag_h]
-        A = np.column_stack([y[:-1], xl[1:], np.ones(len(y) - 1)])
-        self.coef_, *_ = np.linalg.lstsq(A, y[1:], rcond=None)
+        xl = self._lagged(x, self.lag_h)
+        A = np.column_stack([xl, np.ones(len(y))])
+        self.coef_, *_ = np.linalg.lstsq(A, y, rcond=None)
+        Arc = np.column_stack([y[:-1], xl[1:], np.ones(len(y) - 1)])
+        self.coef_rec_, *_ = np.linalg.lstsq(Arc, y[1:], rcond=None)
         return self
 
-    def predict(self, x: np.ndarray, y0: float) -> np.ndarray:
-        a, b, c = self.coef_
-        xl = np.roll(x, self.lag_h)
-        xl[: self.lag_h] = x[: self.lag_h]
+    @property
+    def pole(self) -> float:
+        """旧（递归）口径的自回归极点 a；|a| >= 1 时递归推演必然发散。"""
+        return float(self.coef_rec_[0])
+
+    def predict(self, x: np.ndarray) -> np.ndarray:
+        """静态传递 :math:`a\\,x(t-\\Delta) + b`（初稿原文形式，可部署）。"""
+        a, b = self.coef_
+        return a * self._lagged(x, self.lag_h) + b
+
+    def predict_recursive(self, x: np.ndarray, y0: float) -> np.ndarray:
+        """旧口径 :math:`y_t = a y_{t-1} + b x_{t-\\tau} + c` 递归推演（不稳定，仅对照）。"""
+        a, b, c = self.coef_rec_
+        xl = self._lagged(x, self.lag_h)
         out = np.empty(len(x))
         out[0] = y0
         for t in range(1, len(x)):
@@ -243,19 +270,27 @@ def main() -> None:
     pred_persist = np.concatenate([[y_tr[-1]], y_te[:-1]])
     m = regression_metrics(y_te, pred_persist)
     results.append({"model": "Persistence", **m})
+    preds["Persistence"] = pred_persist
     print(f"    Persistence            R2={m['R2']:+.4f}  RMSE={m['RMSE']:.4f}")
 
     # 4b. 初稿方案：文献标定一阶传递函数（以窟外 RH 为输入，滞后 3 h）
+    #     这是**初稿原文形式**（静态传递，无自回归），也是对初稿最公道的实现口径。
     fot = FirstOrderTransfer(lag_h=3).fit(outdoor.loc[tr, "RH2M"].to_numpy(), y_tr)
-    pred_fot = fot.predict(outdoor.loc[te, "RH2M"].to_numpy(), y_tr[-1])
+    pred_fot = fot.predict(outdoor.loc[te, "RH2M"].to_numpy())
     m = regression_metrics(y_te, pred_fot)
     results.append({"model": "FirstOrderTransfer(初稿方案)", **m})
     preds["FirstOrderTransfer(初稿方案)"] = pred_fot
-    preds["Persistence"] = pred_persist
     print(f"    FirstOrderTransfer     R2={m['R2']:+.4f}  RMSE={m['RMSE']:.4f}   <- 初稿路线")
 
+    # 4b'. 旧口径（自回归 + 单初值递归推演）仅作对照：极点 |a|>=1 时必然数值爆炸。
+    pred_fot_rec = fot.predict_recursive(outdoor.loc[te, "RH2M"].to_numpy(), y_tr[-1])
+    m_rec = regression_metrics(y_te, pred_fot_rec)
+    results.append({"model": "FirstOrderTransfer-递归推演(旧口径)", **m_rec})
+    print(f"    FOT-递归推演(旧口径)   R2={m_rec['R2']:+.4e}  "
+          f"极点 a={fot.pole:.6f} > 1 -> 必发散，不作为性能对照")
+
     # 4c. 无延迟嵌入的直接岭回归
-    drivers = [c for c in ["T2M", "RH2M", "WS10M", "PS", "ALLSKY_SFC_SW_DWN"]
+    drivers = [c for c in ["T2M", "RH2M", "WS10M", "PSC", "ALLSKY_SFC_SW_DWN"]
                if c in outdoor.columns]
     rd = RidgeDirect().fit(outdoor.loc[tr, drivers].to_numpy(), y_tr)
     pred_rd = rd.predict(outdoor.loc[te, drivers].to_numpy())
@@ -278,8 +313,14 @@ def main() -> None:
 
     for name, cfg in configs.items():
         t = time.time()
-        kt = KoopmanTransport(cfg).fit(outdoor[tr], y_tr, fit_koopman=(name.startswith("Operator-Full")))
-        pred = kt.predict(outdoor[te])
+        # 特征矩阵在**全序列**上构造一次再按时间切片：慢变窗口最长 8760 h，
+        # 若分别在训练段/测试段切片上构造，测试段前一年的慢变特征会在切片
+        # 起点重启，训练与测试的特征分布不一致。
+        Psi = build_features(outdoor, cfg)
+        kt = KoopmanTransport(cfg).fit(outdoor[tr], y_tr,
+                                       fit_koopman=(name.startswith("Operator-Full")),
+                                       Psi=Psi[tr])
+        pred = kt.predict(outdoor[te], Psi=Psi[te])
         preds[name] = pred
         models[name] = kt
         m = regression_metrics(y_te, pred)

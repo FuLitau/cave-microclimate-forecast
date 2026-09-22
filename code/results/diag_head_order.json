@@ -1,0 +1,56 @@
+{
+  "n_samples": 220,
+  "P": 258,
+  "rows": [
+    {
+      "variant": "现状：offset=0, 时间升序（代码当前行为）",
+      "offset": 0,
+      "time_desc": false,
+      "MAE_vs_frozen_pp": 1.7229,
+      "max_err_vs_frozen_pp": 10.3075,
+      "R2_vs_frozen": 0.841671,
+      "MAE_vs_advancing_pp": 1.8548,
+      "max_err_vs_advancing_pp": 11.174
+    },
+    {
+      "variant": "仅改偏移：offset=1, 时间升序",
+      "offset": 1,
+      "time_desc": false,
+      "MAE_vs_frozen_pp": 1.8293,
+      "max_err_vs_frozen_pp": 11.5465,
+      "R2_vs_frozen": 0.826018,
+      "MAE_vs_advancing_pp": 1.9537,
+      "max_err_vs_advancing_pp": 12.413
+    },
+    {
+      "variant": "仅改方向：offset=0, 时间降序",
+      "offset": 0,
+      "time_desc": true,
+      "MAE_vs_frozen_pp": 0.696,
+      "max_err_vs_frozen_pp": 2.1615,
+      "R2_vs_frozen": 0.979605,
+      "MAE_vs_advancing_pp": 0.7238,
+      "max_err_vs_advancing_pp": 2.5732
+    },
+    {
+      "variant": "修正后：offset=1, 时间降序",
+      "offset": 1,
+      "time_desc": true,
+      "MAE_vs_frozen_pp": 0.0,
+      "max_err_vs_frozen_pp": 0.0,
+      "R2_vs_frozen": 1.0,
+      "MAE_vs_advancing_pp": 0.2041,
+      "max_err_vs_advancing_pp": 1.2238
+    },
+    {
+      "variant": "回归测试：exp03.OperatorHead 真身",
+      "offset": 1,
+      "time_desc": true,
+      "MAE_vs_frozen_pp": 2e-06,
+      "max_err_vs_frozen_pp": 9e-06,
+      "R2_vs_frozen": null,
+      "MAE_vs_advancing_pp": 0.2041,
+      "max_err_vs_advancing_pp": 1.2238
+    }
+  ]
+}

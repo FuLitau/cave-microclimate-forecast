@@ -1,0 +1,29 @@
+{
+  "train_end": "2020-12-31",
+  "ridge_beta": 1.0,
+  "spectral_radius_K": 0.988088,
+  "n_train": 175297,
+  "n_test": 43847,
+  "by_horizon": {
+    "6": {
+      "direct_R2": 0.66833,
+      "rollout_R2": 0.50497
+    },
+    "12": {
+      "direct_R2": 0.60336,
+      "rollout_R2": 0.42345
+    },
+    "24": {
+      "direct_R2": 0.54469,
+      "rollout_R2": 0.31144
+    },
+    "48": {
+      "direct_R2": 0.47457,
+      "rollout_R2": 0.18296
+    },
+    "72": {
+      "direct_R2": 0.42868,
+      "rollout_R2": 0.11746
+    }
+  }
+}

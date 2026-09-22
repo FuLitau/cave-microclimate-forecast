@@ -1,0 +1,8 @@
+{
+  "stat_window": "2019-01-01..2021-12-31",
+  "lit_RH_in_max": 80.0,
+  "RH_in_max_spinup0": 94.67,
+  "RH_in_max_spinup2": 82.5,
+  "gap_vs_lit_spinup0_pp": 14.67,
+  "gap_vs_lit_spinup2_pp": 2.5
+}

@@ -1,0 +1,6 @@
+﻿variant,offset,time_desc,MAE_vs_frozen_pp,max_err_vs_frozen_pp,R2_vs_frozen,MAE_vs_advancing_pp,max_err_vs_advancing_pp
+"现状：offset=0, 时间升序（代码当前行为）",0,False,1.7229,10.3075,0.841671,1.8548,11.174
+"仅改偏移：offset=1, 时间升序",1,False,1.8293,11.5465,0.826018,1.9537,12.413
+"仅改方向：offset=0, 时间降序",0,True,0.696,2.1615,0.979605,0.7238,2.5732
+"修正后：offset=1, 时间降序",1,True,0.0,0.0,1.0,0.2041,1.2238
+回归测试：exp03.OperatorHead 真身,1,True,2e-06,9e-06,,0.2041,1.2238

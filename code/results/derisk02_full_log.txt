@@ -11,256 +11,316 @@
 
 [2] 时序切分  训练 166,513 / 验证 8,784 / 测试 43,847 小时
 
-[3] 逐配置在验证段选择岭回归系数 beta ...
-    Operator-Full(本作品)       beta* = 1        val R2 = +0.7263
-    Ablation-无慢变项            beta* = 0.001    val R2 = +0.7264
-    Ablation-无Magnus项        beta* = 1        val R2 = +0.7301
-    Ablation-仅快变延迟           beta* = 0.001    val R2 = +0.6954
-    Ablation-短延迟(12h)        beta* = 1        val R2 = +0.7101
+[3] 在全序列上构造特征矩阵（避免切片起点重启慢变滑动均值）...
+    Operator-Full(本作品)       Psi 形状 (219144, 258)
+    Ablation-无慢变项            Psi 形状 (219144, 246)
+    Ablation-无Magnus项        Psi 形状 (219144, 252)
+    Ablation-仅快变延迟           Psi 形状 (219144, 240)
+    Ablation-短延迟(12h)        Psi 形状 (219144, 78)
 
-[4] 拟合模型 ...
+[4] 逐配置在验证段选择岭回归系数 beta ...
+    Operator-Full(本作品)       beta* = 0.0001   val R2 = +0.8788
+    Ablation-无慢变项            beta* = 1e-06    val R2 = +0.7351
+    Ablation-无Magnus项        beta* = 1e-06    val R2 = +0.8724
+    Ablation-仅快变延迟           beta* = 1e-06    val R2 = +0.6976
+    Ablation-短延迟(12h)        beta* = 1e-06    val R2 = +0.8684
+
+[5] 拟合模型 ...
     Koopman 特征维度 p = 258（Full 配置）
+    初稿一阶传递系数 a = 1.000920（|a|>=1 时递归推演必发散）  b = -0.029381  c = 0.815620
+    初稿原文形式（无自回归）a' = 0.300361  b' = 23.596272
 
 ====================================================================================
-[5] 预报时效 h = 24 h
+[5a] 点预报精度  h = 24 h
 ====================================================================================
-                     model    RMSE     MAE       R2     bias
-      Operator-direct(本作品)  7.2838  5.2615  0.54254  -0.3006
-             Ablation-无慢变项  7.4586  5.4474  0.52032  -0.4448
-         Ablation-无Magnus项  7.2959  5.2713  0.54102  -0.3056
-            Ablation-仅快变延迟  7.5115  5.4599  0.51349  -0.6149
-         Ablation-短延迟(12h)  7.3334  5.3262  0.53629  -0.1715
-  FirstOrderTransfer(初稿方案) 33.9724 32.2110 -8.95150 -32.2099
-        RidgeDirect(无延迟嵌入)  8.9108  6.6207  0.31535   0.0160
- Persistence-operator(可部署) 11.6755  9.5770 -0.17540   4.5102
-[oracle]Persistence(需窟内实测)  8.1475  5.4704  0.42762  -0.0012
-          Climatology(可部署)  8.3257  6.0066  0.40231   0.0055
+                         model    RMSE     MAE       R2     bias
+          Operator-direct(本作品)  6.7152  4.8645  0.61118   0.0663
+                 Ablation-无慢变项  7.4360  5.4277  0.52323  -0.4107
+             Ablation-无Magnus项  6.7210  4.8804  0.61051   0.0108
+                Ablation-仅快变延迟  7.5059  5.4585  0.51421  -0.6220
+             Ablation-短延迟(12h)  6.7611  4.9211  0.60584   0.0711
+ FirstOrderTransfer-直接传递(初稿形式)  8.3003  5.6052  0.40594   0.0087
+FirstOrderTransfer-仅外场滞后(初稿原文)  9.4699  7.5568  0.22674  -0.0971
+FirstOrderTransfer-递归推演(不稳定极点) 33.9777 32.2209 -8.95465 -32.2209
+            RidgeDirect(无延迟嵌入)  8.9004  6.6133  0.31694   0.0064
+     Persistence-operator(可部署) 16.4587 14.4081 -1.33575  12.4464
+    [oracle]Persistence(需窟内实测)  8.1475  5.4704  0.42762  -0.0012
+              Climatology(可部署)  8.3257  6.0066  0.40231   0.0055
 
 ====================================================================================
-[5] 预报时效 h = 48 h
+[5a] 点预报精度  h = 48 h
 ====================================================================================
-                     model    RMSE     MAE       R2     bias
-      Operator-direct(本作品)  7.8146  5.6641  0.47356  -0.3358
-             Ablation-无慢变项  7.9738  5.8180  0.45189  -0.5462
-         Ablation-无Magnus项  7.8237  5.6704  0.47233  -0.3389
-            Ablation-仅快变延迟  8.0008  5.8165  0.44817  -0.6947
-         Ablation-短延迟(12h)  7.9356  5.7803  0.45713  -0.1731
-  FirstOrderTransfer(初稿方案) 33.9753 32.2135 -8.95088 -32.2135
-        RidgeDirect(无延迟嵌入) 10.1640  7.5925  0.10943   0.0111
- Persistence-operator(可部署) 11.6752  9.5762 -0.17508   4.5066
-[oracle]Persistence(需窟内实测) 10.0498  7.0062  0.12934  -0.0027
-          Climatology(可部署)  8.2883  5.9693  0.40780   0.0051
+                         model    RMSE     MAE       R2     bias
+          Operator-direct(本作品)  7.4356  5.4096  0.52338  -0.0453
+                 Ablation-无慢变项  7.9529  5.7979  0.45476  -0.5119
+             Ablation-无Magnus项  7.4316  5.4202  0.52389  -0.1152
+                Ablation-仅快变延迟  7.9964  5.8167  0.44878  -0.6991
+             Ablation-短延迟(12h)  7.4899  5.4707  0.51639   0.0590
+ FirstOrderTransfer-直接传递(初稿形式) 10.2583  7.1870  0.09284   0.0072
+FirstOrderTransfer-仅外场滞后(初稿原文)  9.4703  7.5569  0.22685  -0.1013
+FirstOrderTransfer-递归推演(不稳定极点) 33.9862 32.2336 -8.95730 -32.2336
+            RidgeDirect(无延迟嵌入) 10.1576  7.5874  0.11055   0.0015
+     Persistence-operator(可部署) 16.4567 14.4056 -1.33466  12.4428
+    [oracle]Persistence(需窟内实测) 10.0498  7.0062  0.12934  -0.0027
+              Climatology(可部署)  8.2883  5.9693  0.40780   0.0051
 
 ====================================================================================
-[5] 预报时效 h = 72 h
+[5a] 点预报精度  h = 72 h
 ====================================================================================
-                     model    RMSE     MAE       R2     bias
-      Operator-direct(本作品)  8.1559  5.9298  0.42684  -0.3053
-             Ablation-无慢变项  8.3621  6.0853  0.39749  -0.5699
-         Ablation-无Magnus项  8.1616  5.9400  0.42604  -0.3067
-            Ablation-仅快变延迟  8.3699  6.0817  0.39636  -0.7034
-         Ablation-短延迟(12h)  8.3311  6.0924  0.40195  -0.1121
-  FirstOrderTransfer(初稿方案) 33.9782 32.2155 -8.94795 -32.2153
-        RidgeDirect(无延迟嵌入) 10.6287  8.0251  0.02659   0.0120
- Persistence-operator(可部署) 11.6769  9.5772 -0.17486   4.5048
-[oracle]Persistence(需窟内实测) 10.6106  7.4815  0.02991  -0.0002
-          Climatology(可部署)  8.2599  5.9292  0.41213   0.0063
+                         model    RMSE     MAE       R2     bias
+          Operator-direct(本作品)  7.8571  5.7338  0.46807  -0.0533
+                 Ablation-无慢变项  8.3438  6.0675  0.40012  -0.5367
+             Ablation-无Magnus项  7.8474  5.7354  0.46938  -0.1105
+                Ablation-仅快变延迟  8.3694  6.0819  0.39643  -0.7072
+             Ablation-短延迟(12h)  7.9320  5.8098  0.45788   0.0642
+ FirstOrderTransfer-直接传递(初稿形式) 10.8319  7.6703 -0.01097   0.0101
+FirstOrderTransfer-仅外场滞后(初稿原文)  9.4697  7.5556  0.22731  -0.1068
+FirstOrderTransfer-递归推演(不稳定极点) 33.9912 32.2389 -8.95556 -32.2389
+            RidgeDirect(无延迟嵌入) 10.6259  8.0232  0.02711   0.0024
+     Persistence-operator(可部署) 16.4570 14.4049 -1.33365  12.4410
+    [oracle]Persistence(需窟内实测) 10.6106  7.4815  0.02991  -0.0002
+              Climatology(可部署)  8.2599  5.9292  0.41213   0.0063
 
 ====================================================================================
 [6] 业务指标摘要：超阈事件 F1 / AUC
 ====================================================================================
-horizon_h                                24     48     72
-threshold model                                          
-62%(业务预警) Ablation-仅快变延迟              0.080  0.092  0.043
-          Ablation-无Magnus项           0.095  0.084  0.053
-          Ablation-无慢变项               0.097  0.098  0.067
-          Ablation-短延迟(12h)           0.112  0.065  0.051
-          Climatology(可部署)            0.002  0.000  0.000
-          FirstOrderTransfer(初稿方案)    0.000  0.000  0.000
-          Operator-direct(本作品)        0.099  0.088  0.063
-          Persistence-operator(可部署)   0.025  0.025  0.025
-          RidgeDirect(无延迟嵌入)          0.054  0.022  0.026
-          [oracle]Persistence(需窟内实测)  0.092  0.064  0.043
-67%(潮解起始) Ablation-仅快变延迟              0.022  0.017  0.009
-          Ablation-无Magnus项           0.021  0.022  0.004
-          Ablation-无慢变项               0.018  0.024  0.013
-          Ablation-短延迟(12h)           0.007  0.003  0.000
-          Climatology(可部署)            0.000  0.000  0.000
-          FirstOrderTransfer(初稿方案)    0.000  0.000  0.000
-          Operator-direct(本作品)        0.021  0.019  0.012
-          Persistence-operator(可部署)   0.008  0.008  0.008
-          RidgeDirect(无延迟嵌入)          0.000  0.000  0.000
-          [oracle]Persistence(需窟内实测)  0.041  0.000  0.010
-75%(吸湿突变) Ablation-仅快变延迟              0.000  0.000  0.000
-          Ablation-无Magnus项           0.000  0.000  0.000
-          Ablation-无慢变项               0.000  0.000  0.000
-          Ablation-短延迟(12h)           0.000  0.000  0.000
-          Climatology(可部署)            0.000  0.000  0.000
-          FirstOrderTransfer(初稿方案)    0.000  0.000  0.000
-          Operator-direct(本作品)        0.000  0.000  0.000
-          Persistence-operator(可部署)   0.002  0.002  0.002
-          RidgeDirect(无延迟嵌入)          0.000  0.000  0.000
-          [oracle]Persistence(需窟内实测)  0.000  0.000  0.000
+horizon_h                                    24     48     72
+threshold model                                              
+62%(业务预警) Ablation-仅快变延迟                  0.081  0.092  0.045
+          Ablation-无Magnus项               0.125  0.103  0.053
+          Ablation-无慢变项                   0.098  0.102  0.062
+          Ablation-短延迟(12h)               0.126  0.092  0.082
+          Climatology(可部署)                0.002  0.000  0.000
+          FirstOrderTransfer-仅外场滞后(初稿原文)  0.052  0.052  0.052
+          FirstOrderTransfer-直接传递(初稿形式)   0.076  0.042  0.040
+          FirstOrderTransfer-递归推演(不稳定极点)  0.000  0.000  0.000
+          Operator-direct(本作品)            0.127  0.098  0.058
+          Persistence-operator(可部署)       0.025  0.025  0.025
+          RidgeDirect(无延迟嵌入)              0.053  0.024  0.026
+          [oracle]Persistence(需窟内实测)      0.092  0.064  0.043
+67%(潮解起始) Ablation-仅快变延迟                  0.023  0.018  0.006
+          Ablation-无Magnus项               0.026  0.000  0.000
+          Ablation-无慢变项                   0.016  0.025  0.007
+          Ablation-短延迟(12h)               0.012  0.007  0.012
+          Climatology(可部署)                0.000  0.000  0.000
+          FirstOrderTransfer-仅外场滞后(初稿原文)  0.007  0.007  0.007
+          FirstOrderTransfer-直接传递(初稿形式)   0.036  0.000  0.005
+          FirstOrderTransfer-递归推演(不稳定极点)  0.000  0.000  0.000
+          Operator-direct(本作品)            0.026  0.000  0.000
+          Persistence-operator(可部署)       0.008  0.008  0.008
+          RidgeDirect(无延迟嵌入)              0.000  0.000  0.000
+          [oracle]Persistence(需窟内实测)      0.041  0.000  0.010
+75%(吸湿突变) Ablation-仅快变延迟                  0.000  0.000  0.000
+          Ablation-无Magnus项               0.000  0.000  0.000
+          Ablation-无慢变项                   0.000  0.000  0.000
+          Ablation-短延迟(12h)               0.000  0.000  0.000
+          Climatology(可部署)                0.000  0.000  0.000
+          FirstOrderTransfer-仅外场滞后(初稿原文)  0.000  0.000  0.000
+          FirstOrderTransfer-直接传递(初稿形式)   0.000  0.000  0.000
+          FirstOrderTransfer-递归推演(不稳定极点)  0.000  0.000  0.000
+          Operator-direct(本作品)            0.000  0.000  0.000
+          Persistence-operator(可部署)       0.002  0.002  0.002
+          RidgeDirect(无延迟嵌入)              0.000  0.000  0.000
+          [oracle]Persistence(需窟内实测)      0.000  0.000  0.000
 
 [7] 超阈持续时长 —— 事件条件化口径（小时）
 ====================================================================================
 
   联合时长MAE（漏报按整块计，越小越好）:
-horizon_h                                 24      48      72
-threshold model                                             
-62%(业务预警) Ablation-仅快变延迟               6.000   6.104   6.074
-          Ablation-无Magnus项            6.157   6.082   5.890
-          Ablation-无慢变项                6.500   6.362   6.218
-          Ablation-短延迟(12h)            5.988   5.540   5.282
-          Climatology(可部署)             6.653   6.606   6.680
-          FirstOrderTransfer(初稿方案)     5.990   5.990   5.990
-          Operator-direct(本作品)         6.231   6.214   6.235
-          Persistence-operator(可部署)   23.693  23.693  23.693
-          RidgeDirect(无延迟嵌入)           5.516   5.624   5.602
-          [oracle]Persistence(需窟内实测)   5.646   5.722   5.876
-67%(潮解起始) Ablation-仅快变延迟               4.832   5.534   5.514
-          Ablation-无Magnus项            5.485   5.422   5.151
-          Ablation-无慢变项                5.964   5.831   5.860
-          Ablation-短延迟(12h)            5.387   4.963   4.669
-          Climatology(可部署)             5.060   5.015   5.000
-          FirstOrderTransfer(初稿方案)     4.133   4.133   4.133
-          Operator-direct(本作品)         5.950   5.874   5.630
-          Persistence-operator(可部署)   23.898  23.898  23.898
-          RidgeDirect(无延迟嵌入)           4.688   4.708   4.742
-          [oracle]Persistence(需窟内实测)   3.975   4.154   4.000
-75%(吸湿突变) Ablation-仅快变延迟               4.943   5.305   4.526
-          Ablation-无Magnus项            5.312   5.534   5.352
-          Ablation-无慢变项                5.269   5.966   5.714
-          Ablation-短延迟(12h)            5.756   4.873   4.388
-          Climatology(可部署)             3.080   3.080   3.080
-          FirstOrderTransfer(初稿方案)     3.133   3.133   3.133
-          Operator-direct(本作品)         5.674   5.720   5.524
-          Persistence-operator(可部署)   23.974  23.974  23.974
-          RidgeDirect(无延迟嵌入)           3.556   3.556   3.556
-          [oracle]Persistence(需窟内实测)   3.192   3.167   3.167
+horizon_h                                     24      48      72
+threshold model                                                 
+62%(业务预警) Ablation-仅快变延迟                   5.818   5.674   6.063
+          Ablation-无Magnus项                5.904   5.817   5.812
+          Ablation-无慢变项                    6.192   6.070   5.940
+          Ablation-短延迟(12h)                5.862   5.934   5.996
+          Climatology(可部署)                 6.653   6.606   6.680
+          FirstOrderTransfer-仅外场滞后(初稿原文)   5.096   5.096   5.096
+          FirstOrderTransfer-直接传递(初稿形式)    5.691   5.791   5.874
+          FirstOrderTransfer-递归推演(不稳定极点)   5.957   5.957   5.957
+          Operator-direct(本作品)             6.215   6.010   5.797
+          Persistence-operator(可部署)       23.693  23.693  23.693
+          RidgeDirect(无延迟嵌入)               5.532   5.637   5.637
+          [oracle]Persistence(需窟内实测)       5.646   5.722   5.876
+67%(潮解起始) Ablation-仅快变延迟                   4.681   5.188   5.241
+          Ablation-无Magnus项                6.230   5.052   5.152
+          Ablation-无慢变项                    5.549   5.381   5.418
+          Ablation-短延迟(12h)                5.500   5.558   5.702
+          Climatology(可部署)                 5.060   5.015   5.000
+          FirstOrderTransfer-仅外场滞后(初稿原文)   3.868   3.868   3.868
+          FirstOrderTransfer-直接传递(初稿形式)    4.090   4.233   4.000
+          FirstOrderTransfer-递归推演(不稳定极点)   4.133   4.133   4.133
+          Operator-direct(本作品)             6.092   5.477   5.349
+          Persistence-operator(可部署)       23.898  23.898  23.898
+          RidgeDirect(无延迟嵌入)               4.710   4.729   4.763
+          [oracle]Persistence(需窟内实测)       3.975   4.154   4.000
+75%(吸湿突变) Ablation-仅快变延迟                   4.740   4.724   4.385
+          Ablation-无Magnus项                4.581   5.289   4.941
+          Ablation-无慢变项                    5.000   5.694   5.237
+          Ablation-短延迟(12h)                5.217   4.660   4.454
+          Climatology(可部署)                 3.080   3.080   3.080
+          FirstOrderTransfer-仅外场滞后(初稿原文)   3.176   3.176   3.176
+          FirstOrderTransfer-直接传递(初稿形式)    3.115   3.214   3.214
+          FirstOrderTransfer-递归推演(不稳定极点)   3.133   3.133   3.133
+          Operator-direct(本作品)             4.853   4.926   4.873
+          Persistence-operator(可部署)       23.974  23.974  23.974
+          RidgeDirect(无延迟嵌入)               3.556   3.556   3.556
+          [oracle]Persistence(需窟内实测)       3.192   3.167   3.167
 
   条件时长MAE（仅命中窗口）:
-horizon_h                                 24      48      72
-threshold model                                             
-62%(业务预警) Ablation-仅快变延迟               5.138   5.440   3.529
-          Ablation-无Magnus项            5.308   4.087   5.182
-          Ablation-无慢变项                5.558   5.763   4.179
-          Ablation-短延迟(12h)            5.167   5.042   4.727
-          Climatology(可部署)             5.600   4.000   3.000
-          Operator-direct(本作品)         4.903   4.926   5.167
-          Persistence-operator(可部署)   18.043  18.043  18.043
-          RidgeDirect(无延迟嵌入)           5.454   5.444   6.375
-          [oracle]Persistence(需窟内实测)   4.677   5.750   4.909
-67%(潮解起始) Ablation-仅快变延迟               3.556   4.429   3.167
-          Ablation-无Magnus项            3.833   3.400   1.333
-          Ablation-无慢变项                4.429   4.556   3.454
-          Ablation-短延迟(12h)            3.600   3.000   2.800
-          Climatology(可部署)             6.333   6.000   3.000
-          Operator-direct(本作品)         3.400   3.125   2.750
-          Persistence-operator(可部署)   19.867  19.867  19.867
-          RidgeDirect(无延迟嵌入)           3.250   5.000     NaN
-          [oracle]Persistence(需窟内实测)   2.312   6.000   2.000
-75%(吸湿突变) Ablation-仅快变延迟               3.333   2.000   2.000
-          Ablation-无Magnus项            6.000   4.000   3.000
-          Ablation-无慢变项                4.750   7.000   3.500
-          Ablation-短延迟(12h)            7.000   5.000   3.000
-          Operator-direct(本作品)         8.000   6.000   2.500
-          Persistence-operator(可部署)   20.867  20.867  20.867
-          [oracle]Persistence(需窟内实测)   3.250     NaN     NaN
+horizon_h                                     24      48      72
+threshold model                                                 
+62%(业务预警) Ablation-仅快变延迟                   5.100   5.517   3.438
+          Ablation-无Magnus项                4.621   6.433   5.550
+          Ablation-无慢变项                    5.227   5.486   4.000
+          Ablation-短延迟(12h)                4.276   5.750   4.531
+          Climatology(可部署)                 5.600   4.000   3.000
+          FirstOrderTransfer-仅外场滞后(初稿原文)   3.583   3.583   3.583
+          FirstOrderTransfer-直接传递(初稿形式)    3.655   4.929   5.625
+          Operator-direct(本作品)             5.267   5.273   5.000
+          Persistence-operator(可部署)       18.043  18.043  18.043
+          RidgeDirect(无延迟嵌入)               5.454   5.556   6.000
+          [oracle]Persistence(需窟内实测)       4.677   5.750   4.909
+67%(潮解起始) Ablation-仅快变延迟                   3.444   4.000   3.333
+          Ablation-无Magnus项                3.333   2.667   3.750
+          Ablation-无慢变项                    4.143   4.400   3.000
+          Ablation-短延迟(12h)                2.750   3.385   2.700
+          Climatology(可部署)                 6.333   6.000   3.000
+          FirstOrderTransfer-仅外场滞后(初稿原文)   3.000   3.000   3.000
+          FirstOrderTransfer-直接传递(初稿形式)    2.125   5.333   1.000
+          Operator-direct(本作品)             3.538   2.889   2.875
+          Persistence-operator(可部署)       19.867  19.867  19.867
+          RidgeDirect(无延迟嵌入)               3.250   5.000     NaN
+          [oracle]Persistence(需窟内实测)       2.312   6.000   2.000
+75%(吸湿突变) Ablation-仅快变延迟                   3.333   2.000   1.000
+          Ablation-无Magnus项                3.667   3.000   1.000
+          Ablation-无慢变项                    4.250   7.000   2.500
+          Ablation-短延迟(12h)                3.750   3.500   1.000
+          FirstOrderTransfer-直接传递(初稿形式)    3.250     NaN     NaN
+          Operator-direct(本作品)             3.333   4.000   0.000
+          Persistence-operator(可部署)       20.867  20.867  20.867
+          [oracle]Persistence(需窟内实测)       3.250     NaN     NaN
 
   事件窗口检出率:
-horizon_h                                24     48     72
-threshold model                                          
-62%(业务预警) Ablation-仅快变延迟              0.308  0.266  0.181
-          Ablation-无Magnus项           0.277  0.245  0.117
-          Ablation-无慢变项               0.457  0.404  0.298
-          Ablation-短延迟(12h)           0.319  0.255  0.234
-          Climatology(可部署)            0.053  0.021  0.011
-          FirstOrderTransfer(初稿方案)    0.000  0.000  0.000
-          Operator-direct(本作品)        0.330  0.287  0.192
-          Persistence-operator(可部署)   1.000  1.000  1.000
-          RidgeDirect(无延迟嵌入)          0.234  0.096  0.085
-          [oracle]Persistence(需窟内实测)  0.330  0.170  0.117
-67%(潮解起始) Ablation-仅快变延迟              0.200  0.156  0.133
-          Ablation-无Magnus项           0.133  0.111  0.067
-          Ablation-无慢变项               0.311  0.200  0.244
-          Ablation-短延迟(12h)           0.111  0.133  0.111
-          Climatology(可部署)            0.067  0.044  0.022
-          FirstOrderTransfer(初稿方案)    0.000  0.000  0.000
-          Operator-direct(本作品)        0.222  0.178  0.178
-          Persistence-operator(可部署)   1.000  1.000  1.000
-          RidgeDirect(无延迟嵌入)          0.089  0.022  0.000
-          [oracle]Persistence(需窟内实测)  0.356  0.089  0.022
-75%(吸湿突变) Ablation-仅快变延迟              0.200  0.067  0.067
-          Ablation-无Magnus项           0.067  0.067  0.067
-          Ablation-无慢变项               0.267  0.067  0.133
-          Ablation-短延迟(12h)           0.067  0.067  0.067
-          Climatology(可部署)            0.000  0.000  0.000
-          FirstOrderTransfer(初稿方案)    0.000  0.000  0.000
-          Operator-direct(本作品)        0.067  0.067  0.133
-          Persistence-operator(可部署)   1.000  1.000  1.000
-          RidgeDirect(无延迟嵌入)          0.000  0.000  0.000
-          [oracle]Persistence(需窟内实测)  0.267  0.000  0.000
+horizon_h                                    24     48     72
+threshold model                                              
+62%(业务预警) Ablation-仅快变延迟                  0.319  0.308  0.170
+          Ablation-无Magnus项               0.308  0.319  0.213
+          Ablation-无慢变项                   0.468  0.394  0.287
+          Ablation-短延迟(12h)               0.308  0.340  0.340
+          Climatology(可部署)                0.053  0.021  0.011
+          FirstOrderTransfer-仅外场滞后(初稿原文)  0.128  0.128  0.128
+          FirstOrderTransfer-直接传递(初稿形式)   0.308  0.149  0.085
+          FirstOrderTransfer-递归推演(不稳定极点)  0.000  0.000  0.000
+          Operator-direct(本作品)            0.319  0.351  0.245
+          Persistence-operator(可部署)       1.000  1.000  1.000
+          RidgeDirect(无延迟嵌入)              0.234  0.096  0.096
+          [oracle]Persistence(需窟内实测)      0.330  0.170  0.117
+67%(潮解起始) Ablation-仅快变延迟                  0.200  0.156  0.133
+          Ablation-无Magnus项               0.267  0.133  0.089
+          Ablation-无慢变项                   0.311  0.222  0.222
+          Ablation-短延迟(12h)               0.267  0.289  0.222
+          Climatology(可部署)                0.067  0.044  0.022
+          FirstOrderTransfer-仅外场滞后(初稿原文)  0.044  0.044  0.044
+          FirstOrderTransfer-直接传递(初稿形式)   0.356  0.067  0.022
+          FirstOrderTransfer-递归推演(不稳定极点)  0.000  0.000  0.000
+          Operator-direct(本作品)            0.289  0.200  0.178
+          Persistence-operator(可部署)       1.000  1.000  1.000
+          RidgeDirect(无延迟嵌入)              0.089  0.022  0.000
+          [oracle]Persistence(需窟内实测)      0.356  0.089  0.022
+75%(吸湿突变) Ablation-仅快变延迟                  0.200  0.067  0.067
+          Ablation-无Magnus项               0.200  0.067  0.067
+          Ablation-无慢变项                   0.267  0.067  0.133
+          Ablation-短延迟(12h)               0.267  0.133  0.067
+          Climatology(可部署)                0.000  0.000  0.000
+          FirstOrderTransfer-仅外场滞后(初稿原文)  0.000  0.000  0.000
+          FirstOrderTransfer-直接传递(初稿形式)   0.267  0.000  0.000
+          FirstOrderTransfer-递归推演(不稳定极点)  0.000  0.000  0.000
+          Operator-direct(本作品)            0.200  0.133  0.067
+          Persistence-operator(可部署)       1.000  1.000  1.000
+          RidgeDirect(无延迟嵌入)              0.000  0.000  0.000
+          [oracle]Persistence(需窟内实测)      0.267  0.000  0.000
 
 [8] 预警提前量（首次超阈检出率 / 平均提前小时）
 ====================================================================================
- horizon_h threshold                    model  n_onset  n_warned  detect_rate  mean_lead_h
-        24 62%(业务预警)     Operator-direct(本作品)       94        32       0.3404        42.62
-        24 62%(业务预警) FirstOrderTransfer(初稿方案)       94         0       0.0000          NaN
-        24 67%(潮解起始)     Operator-direct(本作品)       40        11       0.2750        23.00
-        24 67%(潮解起始) FirstOrderTransfer(初稿方案)       40         0       0.0000          NaN
-        24 75%(吸湿突变)     Operator-direct(本作品)       11         1       0.0909        54.00
-        24 75%(吸湿突变) FirstOrderTransfer(初稿方案)       11         0       0.0000          NaN
-        48 62%(业务预警)     Operator-direct(本作品)       94        29       0.3085        48.93
-        48 62%(业务预警) FirstOrderTransfer(初稿方案)       94         0       0.0000          NaN
-        48 67%(潮解起始)     Operator-direct(本作品)       40        11       0.2750        35.09
-        48 67%(潮解起始) FirstOrderTransfer(初稿方案)       40         0       0.0000          NaN
-        48 75%(吸湿突变)     Operator-direct(本作品)       11         1       0.0909        56.00
-        48 75%(吸湿突变) FirstOrderTransfer(初稿方案)       11         0       0.0000          NaN
-        72 62%(业务预警)     Operator-direct(本作品)       94        32       0.3404        50.34
-        72 62%(业务预警) FirstOrderTransfer(初稿方案)       94         0       0.0000          NaN
-        72 67%(潮解起始)     Operator-direct(本作品)       40        11       0.2750        45.73
-        72 67%(潮解起始) FirstOrderTransfer(初稿方案)       40         0       0.0000          NaN
-        72 75%(吸湿突变)     Operator-direct(本作品)       11         2       0.1818        42.50
-        72 75%(吸湿突变) FirstOrderTransfer(初稿方案)       11         0       0.0000          NaN
+ horizon_h threshold                         model  n_onset  n_warned  detect_rate  mean_lead_h
+        24 62%(业务预警)          Operator-direct(本作品)       94        33       0.3511        46.67
+        24 62%(业务预警) FirstOrderTransfer-直接传递(初稿形式)       94        28       0.2979        42.46
+        24 67%(潮解起始)          Operator-direct(本作品)       40         9       0.2250        23.00
+        24 67%(潮解起始) FirstOrderTransfer-直接传递(初稿形式)       40         6       0.1500        16.33
+        24 75%(吸湿突变)          Operator-direct(本作品)       11         1       0.0909         4.00
+        24 75%(吸湿突变) FirstOrderTransfer-直接传递(初稿形式)       11         0       0.0000          NaN
+        48 62%(业务预警)          Operator-direct(本作品)       94        36       0.3830        47.28
+        48 62%(业务预警) FirstOrderTransfer-直接传递(初稿形式)       94        27       0.2872        46.96
+        48 67%(潮解起始)          Operator-direct(本作品)       40        10       0.2500        48.50
+        48 67%(潮解起始) FirstOrderTransfer-直接传递(初稿形式)       40         4       0.1000        57.50
+        48 75%(吸湿突变)          Operator-direct(本作品)       11         0       0.0000          NaN
+        48 75%(吸湿突变) FirstOrderTransfer-直接传递(初稿形式)       11         0       0.0000          NaN
+        72 62%(业务预警)          Operator-direct(本作品)       94        33       0.3511        47.42
+        72 62%(业务预警) FirstOrderTransfer-直接传递(初稿形式)       94        29       0.3085        46.10
+        72 67%(潮解起始)          Operator-direct(本作品)       40        11       0.2750        43.73
+        72 67%(潮解起始) FirstOrderTransfer-直接传递(初稿形式)       40         7       0.1750        50.00
+        72 75%(吸湿突变)          Operator-direct(本作品)       11         1       0.0909        18.00
+        72 75%(吸湿突变) FirstOrderTransfer-直接传递(初稿形式)       11         0       0.0000          NaN
 
 ====================================================================================
 [9] 算子物理可解释性
 ====================================================================================
 
 特征族权重占比:
-                sum      mean  count   share
+                 sum      mean  count  share
 group                                       
-fast_lag  20.993190  0.087472    240  0.7635
-magnus     1.201324  0.200221      6  0.0437
-slow_ma    5.302915  0.441910     12  0.1929
+fast_lag  113.865499  0.474440    240  0.726
+magnus      9.878679  1.646447      6  0.063
+slow_ma    33.091551  2.757629     12  0.211
 
 Top-12 读出特征:
-      feature    weight  abs_weight
-     q_ma2160 -1.109942    1.109942
-   T2M_ma2160 -1.085815    1.085815
-    RH2M_lag0  0.981976    0.981976
-       q_ma24  0.928711    0.928711
-    RH2M_lag1  0.851330    0.851330
-    RH2M_lag2  0.702175    0.702175
-    RH2M_lag3  0.577601    0.577601
-RHslow_ma2160  0.560905    0.560905
-       q_ma72  0.511708    0.511708
-    RH2M_lag4  0.482510    0.482510
-   T2M_ma8760 -0.412022    0.412022
-    RH2M_lag5  0.408189    0.408189
+    feature    weight  abs_weight
+     q_ma24  8.337557    8.337557
+RHslow_ma24 -6.234804    6.234804
+  T2M_ma720  5.169184    5.169184
+ T2M_ma2160 -5.022218    5.022218
+  RH2M_lag0  4.685788    4.685788
+   T2M_lag0 -4.365204    4.365204
+  T2M_lag23 -3.658105    3.658105
+    q_ma720 -3.147005    3.147005
+   T2M_ma24 -3.095432    3.095432
+  T2M_lag47  3.031921    3.031921
+  T2M_lag46 -2.832440    2.832440
+   T2M_lag9  2.177700    2.177700
 
 算子谱（提取到的物理时间常数）:
    lambda_discrete  abs_lambda  tau_hours  period_hours  period_days
-0.986413+0.000000j    0.986413      73.10           inf          inf
-0.931382+0.248889j    0.964064      27.32         24.06         1.00
-0.931382-0.248889j    0.964064      27.32         24.06         1.00
-0.953620+0.000000j    0.953620      21.06           inf          inf
-0.937054+0.000000j    0.937054      15.38           inf          inf
-0.900579+0.000000j    0.900579       9.55           inf          inf
-0.856420+0.021439j    0.856689       6.46        251.04        10.46
-0.856420-0.021439j    0.856689       6.46        251.04        10.46
-0.715560-0.410441j    0.824917       5.20         12.07         0.50
-0.715560+0.410441j    0.824917       5.20         12.07         0.50
+0.999850-0.000720j    0.999851    6690.56       8727.13       363.63
+0.999850+0.000720j    0.999851    6690.56       8727.13       363.63
+0.999722+0.000000j    0.999722    3600.06           inf          inf
+0.999571+0.000000j    0.999571    2331.45           inf          inf
+0.965485+0.258647j    0.999530    2125.30         24.00         1.00
+0.965485-0.258647j    0.999530    2125.30         24.00         1.00
+0.999513+0.000960j    0.999513    2053.94       6538.81       272.45
+0.999513-0.000960j    0.999513    2053.94       6538.81       272.45
+0.865337+0.499468j    0.999138    1159.43         12.00         0.50
+0.865337-0.499468j    0.999138    1159.43         12.00         0.50
 
-总用时 73.9s
+====================================================================================
+[10] 特征族消融判读（验证段 vs 测试段）
+====================================================================================
+
+  h = 24 h   Full: test R2 +0.6112（验证段同时刻读出 R2 +0.8788）
+    Ablation-无慢变项            val ΔR2 -0.1437 / test ΔR2 -0.0879  F1(62%) 0.0980
+    Ablation-无Magnus项        val ΔR2 -0.0063 / test ΔR2 -0.0007  F1(62%) 0.1250
+    Ablation-仅快变延迟           val ΔR2 -0.1812 / test ΔR2 -0.0970  F1(62%) 0.0814
+    Ablation-短延迟(12h)        val ΔR2 -0.0104 / test ΔR2 -0.0053  F1(62%) 0.1256
+
+  h = 48 h   Full: test R2 +0.5234（验证段同时刻读出 R2 +0.8788）
+    Ablation-无慢变项            val ΔR2 -0.1437 / test ΔR2 -0.0686  F1(62%) 0.1022
+    Ablation-无Magnus项        val ΔR2 -0.0063 / test ΔR2 +0.0005  F1(62%) 0.1029   <== 测试段反超 Full，如实报告
+    Ablation-仅快变延迟           val ΔR2 -0.1812 / test ΔR2 -0.0746  F1(62%) 0.0917
+    Ablation-短延迟(12h)        val ΔR2 -0.0104 / test ΔR2 -0.0070  F1(62%) 0.0920
+
+  h = 72 h   Full: test R2 +0.4681（验证段同时刻读出 R2 +0.8788）
+    Ablation-无慢变项            val ΔR2 -0.1437 / test ΔR2 -0.0680  F1(62%) 0.0623
+    Ablation-无Magnus项        val ΔR2 -0.0063 / test ΔR2 +0.0013  F1(62%) 0.0529   <== 测试段反超 Full，如实报告
+    Ablation-仅快变延迟           val ΔR2 -0.1812 / test ΔR2 -0.0716  F1(62%) 0.0446
+    Ablation-短延迟(12h)        val ΔR2 -0.0104 / test ΔR2 -0.0102  F1(62%) 0.0819
+
+总用时 90.1s

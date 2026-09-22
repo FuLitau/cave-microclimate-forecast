@@ -47,7 +47,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.operator.transport import KoopmanTransport, TransportConfig  # noqa: E402
+from src.operator.transport import (KoopmanTransport, TransportConfig,  # noqa: E402
+                                    build_features)
 from src.physics.cave_model import CaveModel, CaveParams              # noqa: E402
 
 RESULTS = ROOT / "results"
@@ -234,32 +235,84 @@ def lead_time_metrics(y_true, y_pred, thr: float,
 
 
 class FirstOrderTransfer:
-    """初稿方案：一阶衰减 + 滞后传递函数 :math:`y_t = a y_{t-1} + b x_{t-\\tau} + c`。
+    """初稿方案的传递函数结构 :math:`y_t = a y_{t-1} + b x_{t-\\tau} + c`。
 
-    多步预报时**递归推演**（把预测值喂回），这正是初稿"物理传递模型"的做法，
-    也正好暴露自回归误差累积问题。
+    **同一组拟合系数，提供三种口径不同的多步推演方式**。这一点很重要：把
+    "初稿方案不行"归因到 *模型形式* 还是 *推演方式*，结论完全不同，而两者
+    的差别恰好藏在"怎么把一步方程变成多步预报"这一步里。
+
+    ``forecast_direct``
+        非递归直接传递 :math:`\\hat y(t+h) = a\\,y(t) + b\\,x(t+h-\\tau) + c`。
+        每个预报起点用**当时可测到的窟内实测值**重新锚定，配未来外场轨迹。
+        这是**可部署**口径，且与直接多步算子（``predict_direct``）严格同口径
+        ——算子的特征也只用到 ``t`` 时刻为止的历史。
+    ``forecast_lagged``
+        初稿原文形式（**不含自回归项**）:math:`\\hat y(t+h) = a' x(t+h-\\tau) + b'`。
+        连窟内实测都不需要，是最"轻"的可部署对照。
+    ``forecast_recursive``
+        把预测值喂回、从单一初值一路推演的写法。极点 :math:`|a|>1` 时数学上
+        必然发散（实测 a≈1.0009 时 40000 步后达 -1e17，被量程截断成常数序列），
+        因此它**只能作为"误差累积"的定性说明，不能当作性能对照**。
     """
 
     def __init__(self, lag_h: int = 3):
         self.lag_h = lag_h
         self.coef_: np.ndarray | None = None
+        self.coef_lagged_: np.ndarray | None = None
 
     def fit(self, x, y):
         xl = np.roll(x, self.lag_h); xl[: self.lag_h] = x[: self.lag_h]
         A = np.column_stack([y[:-1], xl[1:], np.ones(len(y) - 1)])
         self.coef_, *_ = np.linalg.lstsq(A, y[1:], rcond=None)
+        # 初稿原文形式：无自回归项
+        A2 = np.column_stack([xl, np.ones(len(y))])
+        self.coef_lagged_, *_ = np.linalg.lstsq(A2, y, rcond=None)
         return self
 
-    def forecast(self, x_future: np.ndarray, y_last: float) -> np.ndarray:
-        """给定未来外场序列与最后一个已知窟内值，递归推演。"""
+    @property
+    def pole(self) -> float:
+        """自回归极点 a。|a| >= 1 时递归推演必发散。"""
+        return float(self.coef_[0])
+
+    def _shifted(self, x_future: np.ndarray, horizon: int, n: int) -> np.ndarray:
+        """取被评估样本对应的滞后外场 :math:`x(t+h-\\tau)`（长度 n）。"""
+        idx = horizon + np.arange(n) - self.lag_h
+        return x_future[np.clip(idx, 0, None)]
+
+    def forecast_direct(self, x_future: np.ndarray, y_origin: np.ndarray,
+                        horizon: int) -> np.ndarray:
+        """可部署口径：每个起点用当前窟内实测重锚，不递归。
+
+        ``pred[i]`` 预测 :math:`y(t_0 + h + i)`，与 ``x_future``/``y_origin``
+        的下标共用同一时基。
+        """
         a, b, c = self.coef_
-        out = np.empty(len(x_future))
+        n = len(x_future) - horizon
+        return a * y_origin[:n] + b * self._shifted(x_future, horizon, n) + c
+
+    def forecast_lagged(self, x_future: np.ndarray, horizon: int) -> np.ndarray:
+        """初稿原文形式（仅外场滞后，无自回归）：可部署、最轻的对照。"""
+        a, b = self.coef_lagged_
+        n = len(x_future) - horizon
+        return a * self._shifted(x_future, horizon, n) + b
+
+    def forecast_recursive(self, x_future: np.ndarray, y_last: float,
+                           horizon: int) -> np.ndarray:
+        """原 P0 写法：单一初值、逐小时递归、不重置。
+
+        内部先把递归轨迹推到 ``n + h - 1`` 步，再按"第 i 个样本对应
+        :math:`y(t_0+h+i)`"对齐取片段。发散与否由 :attr:`pole` 决定。
+        """
+        a, b, c = self.coef_
+        n = len(x_future) - horizon
+        steps = n + horizon - 1
+        traj = np.empty(steps)
         prev = y_last
-        for t in range(len(x_future)):
+        for t in range(steps):
             src = x_future[t - self.lag_h] if t >= self.lag_h else x_future[0]
             prev = a * prev + b * src + c
-            out[t] = prev
-        return out
+            traj[t] = prev
+        return traj[horizon - 1: horizon - 1 + n]
 
 
 class RidgeDirect:
@@ -317,11 +370,13 @@ def main() -> None:
     od_te = outdoor[te]
     y_te = y[te]
 
-    # ---------- 每个配置**各自**选 beta ----------
-    # 方法学要点：消融之间特征维度不同（240~258），同一 beta 对各配置的
-    # 相对正则强度并不相同。若共用 beta，"某消融反超"可能只是正则强度错配的伪象，
-    # 而非"该特征族无用"。因此**每个配置独立在验证段选 beta**。
-    print("\n[3] 逐配置在验证段选择岭回归系数 beta ...")
+    # ---------- 特征矩阵：**必须全序列构造一次，再按时间切分** ----------
+    # 慢变窗口最长 8760 h（1 年）。若在训练段 / 验证段 / 测试段的切片上分别
+    # 调用 build_features，滑动均值会在每个切片起点重新起步：测试段前整整一年
+    # 的慢变特征都是"只看了几天"的错值，训练段与测试段的特征分布也不再一致，
+    # 测试指标被系统性污染。唯一正确的做法是全序列构造 Psi、再用行掩码切片。
+    DRV = list(TransportConfig().drivers)
+    print("\n[3] 在全序列上构造特征矩阵（避免切片起点重启慢变滑动均值）...")
 
     ABLATIONS = {
         "Operator-Full(本作品)": {},
@@ -330,59 +385,94 @@ def main() -> None:
         "Ablation-仅快变延迟": {"use_slow": False, "use_magnus": False},
         "Ablation-短延迟(12h)": {"n_fast_lags": 12},
     }
-    BETA_GRID = (1e-3, 1e-2, 1e-1, 1.0, 10.0, 100.0)
+    #: 岭强度网格。**两端必须够远**：早前网格下界只到 1e-3，结果所有配置的
+    #: β* 都被钉在下界上——那不是"最优"，而是"网格没覆盖到最优"。这里把下界
+    #: 放到 1e-6（与 `TransportConfig.ridge_beta` 默认值一致）。
+    BETA_GRID = (1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1.0, 10.0, 100.0)
+
+    Psi_all: dict[str, np.ndarray] = {}
+    for name, over in ABLATIONS.items():
+        _cfg = TransportConfig(**over)
+        Psi_all[name] = build_features(outdoor, _cfg)
+        print(f"    {name:<24} Psi 形状 {Psi_all[name].shape}")
+
+    # ---------- 每个配置**各自**选 beta ----------
+    # 方法学要点：消融之间特征维度不同（240~258），同一 beta 对各配置的
+    # 相对正则强度并不相同。若共用 beta，"某消融反超"可能只是正则强度错配的伪象，
+    # 而非"该特征族无用"。因此**每个配置独立在验证段选 beta**。
+    print("\n[4] 逐配置在验证段选择岭回归系数 beta ...")
 
     transports: dict[str, KoopmanTransport] = {}
     beta_of: dict[str, float] = {}
+    val_r2_of: dict[str, float] = {}
     for name, over in ABLATIONS.items():
         best = None
         for beta in BETA_GRID:
             cfg = TransportConfig(ridge_beta=beta, **over)
-            kt = KoopmanTransport(cfg).fit(outdoor[tr], y[tr], fit_koopman=False)
-            r2 = reg_metrics(y[va], kt.predict(outdoor[va]))["R2"]
+            kt = KoopmanTransport(cfg).fit(
+                outdoor[tr], y[tr], fit_koopman=False, Psi=Psi_all[name][tr])
+            r2 = reg_metrics(y[va], kt.predict(outdoor[va], Psi=Psi_all[name][va]))["R2"]
             if best is None or r2 > best[1]:
                 best = (beta, r2)
         beta_of[name] = best[0]
+        val_r2_of[name] = best[1]
         print(f"    {name:<24} beta* = {best[0]:<8g} val R2 = {best[1]:+.4f}")
 
     # 用各自的最优 beta 重新拟合（Full 额外拟合 K 供谱分析）
-    print("\n[4] 拟合模型 ...")
+    print("\n[5] 拟合模型 ...")
     for name, over in ABLATIONS.items():
         cfg = TransportConfig(ridge_beta=beta_of[name], **over)
         transports[name] = KoopmanTransport(cfg).fit(
-            outdoor[tr], y[tr], fit_koopman=name.startswith("Operator-Full"))
+            outdoor[tr], y[tr], fit_koopman=name.startswith("Operator-Full"),
+            Psi=Psi_all[name][tr])
     kt = transports["Operator-Full(本作品)"]
+    Psi_full = Psi_all["Operator-Full(本作品)"]
     beta_star = beta_of["Operator-Full(本作品)"]
     print(f"    Koopman 特征维度 p = {kt.n_features_in_}（Full 配置）")
 
-    rd = RidgeDirect().fit(outdoor.loc[tr, ["T2M", "RH2M", "WS10M", "PS",
-                                            "ALLSKY_SFC_SW_DWN"]].to_numpy(), y[tr])
+    rd = RidgeDirect().fit(outdoor.loc[tr, DRV].to_numpy(), y[tr])
     fot = FirstOrderTransfer(lag_h=3).fit(outdoor.loc[tr, "RH2M"].to_numpy(), y[tr])
+    print(f"    初稿一阶传递系数 a = {fot.pole:.6f}（|a|>=1 时递归推演必发散）"
+          f"  b = {fot.coef_[1]:.6f}  c = {fot.coef_[2]:.6f}")
+    print(f"    初稿原文形式（无自回归）a' = {fot.coef_lagged_[0]:.6f}"
+          f"  b' = {fot.coef_lagged_[1]:.6f}")
 
-    w_direct = {h: kt.fit_direct(outdoor[tr], y[tr], h) for h in HORIZONS}
-    w_abl = {name: {h: t.fit_direct(outdoor[tr], y[tr], h) for h in HORIZONS}
+    w_direct = {h: kt.fit_direct(outdoor[tr], y[tr], h, Psi=Psi_full[tr])
+                for h in HORIZONS}
+    w_abl = {name: {h: t.fit_direct(outdoor[tr], y[tr], h, Psi=Psi_all[name][tr])
+                    for h in HORIZONS}
              for name, t in transports.items()}
 
     clim = pd.Series(y[tr], index=outdoor.index[tr]).groupby(
         lambda t: (t.month, t.day, t.hour)).mean()
 
     # ---------- 构造预测（可复用于验证段与测试段） ----------
-    def build_preds(od_slice: pd.DataFrame, y_slice: np.ndarray, h: int):
+    def build_preds(mask, h: int):
+        od_slice = outdoor[mask]
+        y_slice = y[mask]
         out: dict[str, np.ndarray] = {}
         n = len(y_slice) - h
-        out["Operator-direct(本作品)"] = kt.predict_direct(od_slice, w_direct[h])[:n]
+        out["Operator-direct(本作品)"] = kt.predict_direct(
+            od_slice, w_direct[h], Psi=Psi_full[mask])[:n]
         for name, t in transports.items():
             if name.startswith("Operator-Full"):
                 continue
-            out[name] = t.predict_direct(od_slice, w_abl[name][h])[:n]
-        out["FirstOrderTransfer(初稿方案)"] = fot.forecast(
-            od_slice["RH2M"].to_numpy(), y_slice[0])[:n]
-        out["RidgeDirect(无延迟嵌入)"] = rd.predict(
-            od_slice[["T2M", "RH2M", "WS10M", "PS", "ALLSKY_SFC_SW_DWN"]].to_numpy())[:n]
+            out[name] = t.predict_direct(
+                od_slice, w_abl[name][h], Psi=Psi_all[name][mask])[:n]
+        rh2m = od_slice["RH2M"].to_numpy()
+        # 初稿方案的三种推演口径（同一组系数，只差"怎么把一步方程变成多步"）
+        out["FirstOrderTransfer-直接传递(初稿形式)"] = fot.forecast_direct(
+            rh2m, y_slice, h)[:n]
+        out["FirstOrderTransfer-仅外场滞后(初稿原文)"] = fot.forecast_lagged(
+            rh2m, h)[:n]
+        out["FirstOrderTransfer-递归推演(不稳定极点)"] = fot.forecast_recursive(
+            rh2m, y_slice[0], h)[:n]
+        out["RidgeDirect(无延迟嵌入)"] = rd.predict(od_slice[DRV].to_numpy())[:n]
         od_persist = od_slice.copy()
         for col in od_persist.columns:
             od_persist[col] = od_slice[col].to_numpy()[0]
-        out["Persistence-operator(可部署)"] = kt.predict(od_persist)[:n]
+        out["Persistence-operator(可部署)"] = kt.predict(
+            od_persist, Psi=kt.feature_matrix(od_persist))[:n]
         out["[oracle]Persistence(需窟内实测)"] = y_slice[:n]
         out["Climatology(可部署)"] = np.array(
             [clim.get((t.month, t.day, t.hour), np.nan) for t in od_slice.index[:n]])
@@ -394,20 +484,20 @@ def main() -> None:
     rows, ev_rows, dur_rows, lead_rows = [], [], [], []
 
     for h in HORIZONS:
-        print(f"\n{'=' * 84}\n[5] 预报时效 h = {h} h\n{'=' * 84}")
+        print(f"\n{'=' * 84}\n[5a] 点预报精度  h = {h} h\n{'=' * 84}")
         n = len(y_te) - h
         yt = y_te[h:]
-        preds = build_preds(od_te, y_te, h)
+        preds = build_preds(te, h)
 
         # 在**验证段**标定各模型的决策阈值（测试段只应用，无泄露）
-        val_preds = build_preds(od_va, y_va, h)
+        val_preds = build_preds(va, h)
         cuts: dict[str, float] = {}
         for tname, thr in THRESHOLDS.items():
             for name, pv in val_preds.items():
                 cuts[f"{tname}|{name}"] = calibrate_cut(y_va[h:], pv, thr)
-        # 初稿方案的递归推演在长时效会数值发散，评估前做物理量程截断
-        preds["FirstOrderTransfer(初稿方案)"] = np.clip(
-            preds["FirstOrderTransfer(初稿方案)"], 0.0, 100.0)
+        # 递归推演口径在长时效会数值饱和，评估前做物理量程截断
+        rk = "FirstOrderTransfer-递归推演(不稳定极点)"
+        preds[rk] = np.clip(preds[rk], 0.0, 100.0)
 
         for name, p in preds.items():
             m = reg_metrics(yt, p)
@@ -423,7 +513,8 @@ def main() -> None:
                 ev_rows.append({"horizon_h": h, "threshold": tname, "model": name, **e})
                 d = duration_metrics(yt, p, thr, cut=cut)
                 dur_rows.append({"horizon_h": h, "threshold": tname, "model": name, **d})
-            for name in ("Operator-direct(本作品)", "FirstOrderTransfer(初稿方案)"):
+            for name in ("Operator-direct(本作品)",
+                         "FirstOrderTransfer-直接传递(初稿形式)"):
                 l = lead_time_metrics(yt, preds[name], thr,
                                       cut=cuts[f"{tname}|{name}"])
                 lead_rows.append({"horizon_h": h, "threshold": tname,
@@ -470,6 +561,30 @@ def main() -> None:
         sp.to_csv(RESULTS / "derisk02_spectrum.csv", index=False)
     except Exception as exc:  # noqa: BLE001
         print(f"谱分析失败: {exc}")
+
+    # ---------- 特征族消融判读 ----------
+    # 之前这一步只 print 表格、不做判读，读者（和审阅者）容易把"某消融在某段
+    # 反超 Full"读成"该特征族无用"或直接忽略。这里显式给出**验证段与测试段
+    # 双向**判读，并把"反超"如实标出来——**负结论也要写清楚**。
+    print(f"\n{'=' * 84}\n[10] 特征族消融判读（验证段 vs 测试段）\n{'=' * 84}")
+    acc = pd.DataFrame(rows)
+    ev = pd.DataFrame(ev_rows)
+    FULL = "Operator-direct(本作品)"
+    for h in HORIZONS:
+        d = acc[acc.horizon_h == h].set_index("model")
+        full_r2 = float(d.loc[FULL, "R2"])
+        print(f"\n  h = {h} h   Full: test R2 {full_r2:+.4f}"
+              f"（验证段同时刻读出 R2 {val_r2_of['Operator-Full(本作品)']:+.4f}）")
+        for name in ABLATIONS:
+            if name.startswith("Operator-Full"):
+                continue
+            dv = val_r2_of[name] - val_r2_of["Operator-Full(本作品)"]
+            dt = float(d.loc[name, "R2"]) - full_r2
+            sel = ev[(ev.horizon_h == h) & (ev.model == name) &
+                     (ev.threshold == "62%(业务预警)")]["F1"]
+            f1s = f"  F1(62%) {float(sel.iloc[0]):.4f}" if len(sel) else ""
+            flag = "   <== 测试段反超 Full，如实报告" if dt > 0 else ""
+            print(f"    {name:<24} val ΔR2 {dv:+.4f} / test ΔR2 {dt:+.4f}{f1s}{flag}")
 
     print(f"\n总用时 {time.time() - t0:.1f}s")
 

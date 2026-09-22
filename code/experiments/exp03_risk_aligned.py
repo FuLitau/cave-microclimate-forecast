@@ -59,7 +59,8 @@ from src.losses.twcrps import (                       # noqa: E402
     risk_to_decision,
     weighted_quantile_loss,
 )
-from src.operator.transport import KoopmanTransport, TransportConfig  # noqa: E402
+from src.operator.transport import (KoopmanTransport, TransportConfig,  # noqa: E402
+                                    DEFAULT_DRIVERS, build_features)
 from src.physics.cave_model import CaveModel, CaveParams              # noqa: E402
 
 RESULTS = ROOT / "results"
@@ -141,8 +142,13 @@ class OperatorHead(nn.Module):
         self.register_buffer("mu", torch.tensor(transport.mu_, dtype=torch.float32))
         self.register_buffer("sigma", torch.tensor(transport.sigma_, dtype=torch.float32))
         self.h_max = H_MAX
-        # 预生成滑窗索引 (h_max, HIST_FAST)
-        idx = torch.arange(self.h_max)[:, None] + torch.arange(HIST_FAST)[None, :]
+        # 预生成滑窗索引 (h_max, HIST_FAST)。
+        # seq = [实测 48 h | 预报 72 h]，seq 下标 i 对应时刻 (s - HIST_FAST + i)；
+        # 时效 h（1-based）要预报的窟内 RH 时刻是 t_pred = s + h - 1，
+        # 对应 seq 下标 HIST_FAST + h - 1，故窗口末端须为 (h-1) + 1 + (HIST_FAST-1)。
+        # 少这个 +1 会让整个窗口整体早 1 小时（历史 bug）。
+        idx = (torch.arange(self.h_max)[:, None] + 1
+               + torch.arange(HIST_FAST)[None, :])
         self.register_buffer("idx", idx)
         self.to(device)
 
@@ -169,6 +175,12 @@ class OperatorHead(nn.Module):
         seq = torch.cat([hist, fcst], dim=1)                            # (B,120,V,Q)
         # 取出每个时效对应的 48 h 窗口 -> (B, H, HIST_FAST, V, Q)
         win = seq[:, self.idx]                                          # 广播索引
+        # **关键不变式**：KoopmanTransport 的 w_ 是在 build_features 的排布上拟合的，
+        # 即「lag 主序、lag=0（最新时刻）在前」（时间降序）。这里窗口是按时间升序
+        # 取出的，必须先翻转时间轴再展平，否则扁平索引 k 与 w_ 的期望索引完全错位
+        # （实测 MAE 1.72 pp、最大 10.3 pp；翻转后残差恰为 0）。
+        # 回归测试见 experiments/diag_head_order.py。
+        win = win.flip(2)                                               # 时间降序：lag0 在前
         fast = win.permute(0, 1, 4, 2, 3).reshape(B, H, Q, -1)          # (B,H,Q,240)
 
         # 拼接冻结的慢变特征
@@ -232,10 +244,42 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, thr: float) -> dict:
 
 
 def duration_err(y_true, y_pred, thr, block=24) -> float:
+    """每 24 h 一格，统计"预报超阈小时数 − 真实超阈小时数"的绝对误差均值。
+
+    **⚠️ 这是一个退化口径，不得单独用来评判风险预报。**
+    超阈是稀有事件（62% 阈值下基准率约 1.2%），这个量的最小值由"从不报警"
+    这个退化解取得：每格真值几乎都是 0，预报也报 0 就近乎零误差。实测 A 模式
+    （纯 MSE）在 62% / 24 h 上 ``pred_rate = 0.0000``（从不报警），却拿到
+    最小的 ``dur_MAE_h = 0.2834 ≈ base_rate × 24``。保留该列只为与历史结果
+    可比，**结论请引用 :func:`duration_metrics` 的事件条件化口径**。
+    """
     n = (len(y_true) // block) * block
     a = (y_true[:n] >= thr).reshape(-1, block).sum(axis=1)
     b = (y_pred[:n] >= thr).reshape(-1, block).sum(axis=1)
     return round(float(np.abs(b - a).mean()), 4)
+
+
+def duration_metrics(y_true, y_pred, thr, block: int = 24) -> dict:
+    """**事件条件化**的超阈持续时长指标（判读持续时长请用这一组）。
+
+    只在真实发生超阈的 24 h 窗口上统计误差，并同时计入漏报与误报：
+
+    * ``n_event_block`` —— 真值含超阈小时的窗口数（分母）；
+    * ``hit_window`` —— 这些窗口中被预报检出的比例（漏报率 = 1 − 它）；
+    * ``false_window`` —— 无事件窗口中被误报的比例；
+    * ``cond_dur_MAE_h`` —— 命中窗口内"预报超阈小时数 − 真实超阈小时数"均值。
+    """
+    n = (len(y_true) // block) * block
+    at = (y_true[:n] >= thr).reshape(-1, block).sum(axis=1)
+    ap = (y_pred[:n] >= thr).reshape(-1, block).sum(axis=1)
+    hit = at > 0
+    err_hit = float(np.abs(ap[hit] - at[hit]).mean()) if hit.any() else np.nan
+    return {
+        "n_event_block": int(hit.sum()),
+        "hit_window": round(float((ap[hit] > 0).mean()), 4) if hit.any() else 0.0,
+        "false_window": round(float((ap[~hit] > 0).mean()), 4) if (~hit).any() else 0.0,
+        "cond_dur_MAE_h": round(err_hit, 4) if np.isfinite(err_hit) else np.nan,
+    }
 
 
 # ==========================================================================
@@ -253,8 +297,7 @@ def main() -> None:
     outdoor = pd.read_csv(ROOT / "data" / "interim" / "power_hourly_mogao_2001_2025.csv",
                           index_col=0, parse_dates=True).sort_index()
     outdoor = outdoor[~outdoor.index.duplicated(keep="first")]
-    drivers = ["T2M", "RH2M", "WS10M", "PS", "ALLSKY_SFC_SW_DWN"]
-    drivers = [c for c in drivers if c in outdoor.columns]
+    drivers = [c for c in DEFAULT_DRIVERS if c in outdoor.columns]
 
     print("\n[1] 窟内物理合成标签 ...")
     cave = CaveModel(CaveParams()).simulate(outdoor)
@@ -262,16 +305,40 @@ def main() -> None:
 
     # ---------- 算子（在外场数据上闭式拟合，只用训练段） ----------
     tr_mask = outdoor.index <= pd.Timestamp(TRAIN_END, tz="UTC")
-    print("[2] 闭式拟合输运算子（训练段）...")
-    transport = KoopmanTransport(TransportConfig(ridge_beta=10.0)).fit(
-        outdoor[tr_mask], cave_rh[tr_mask], fit_koopman=False)
+    va_mask = (outdoor.index > pd.Timestamp(TRAIN_END, tz="UTC")) & \
+              (outdoor.index <= pd.Timestamp(VAL_END, tz="UTC"))
+
+    # 特征矩阵与 beta 无关，全序列构造一次复用；按行掩码切片以避免慢变窗口
+    # 在训练段/验证段/测试段的切片起点重新起步（最长窗口 8760 h）。
+    psi_op = build_features(outdoor, TransportConfig())
+
+    print("[2] 闭式拟合输运算子（训练段；正则强度在验证段上选）...")
+    # 早前 beta=10.0 是硬编码的，而 2020 验证段算完从未被使用。阈值标定与
+    # 内生权重全部依赖算子读出的**量级**，用拍脑袋的正则强度去定它没有依据。
+    BETA_GRID = (1e-3, 1e-2, 1e-1, 1.0, 10.0, 100.0)
+    beta_best = None
+    for beta in BETA_GRID:
+        _t = KoopmanTransport(TransportConfig(ridge_beta=beta)).fit(
+            outdoor[tr_mask], cave_rh[tr_mask], fit_koopman=False,
+            Psi=psi_op[tr_mask])
+        _p = _t.predict(outdoor[va_mask], Psi=psi_op[va_mask])
+        _yt = cave_rh[va_mask]
+        r2 = float(1 - np.sum((_yt - _p) ** 2) / np.sum((_yt - _yt.mean()) ** 2))
+        print(f"      beta = {beta:<8g} val R2 = {r2:+.4f}")
+        if beta_best is None or r2 > beta_best[1]:
+            beta_best = (beta, r2)
+    beta_star, beta_val_r2 = beta_best
+    print(f"    -> beta* = {beta_star:g}（验证段读出 R2 = {beta_val_r2:+.4f}）")
+
+    transport = KoopmanTransport(TransportConfig(ridge_beta=beta_star)).fit(
+        outdoor[tr_mask], cave_rh[tr_mask], fit_koopman=False,
+        Psi=psi_op[tr_mask])
     n_fast = transport.cfg.n_fast_lags * len(drivers)
     n_slow = transport.n_features_in_ - n_fast
     print(f"    特征维度 P = {transport.n_features_in_}  (快变 {n_fast} + 慢变/Magnus {n_slow})")
 
     # 冻结的慢变特征：对整条序列算一次，取每个样本起点那一行
-    from src.operator.transport import build_features
-    psi_all = build_features(outdoor, transport.cfg)          # (N, P) 原始量纲
+    psi_all = psi_op                                            # (N, P) 原始量纲
     slow_all = psi_all[:, n_fast:].astype(np.float32)
     del psi_all
 
@@ -392,63 +459,109 @@ def main() -> None:
         models[mode] = run(mode)
 
     # ---------- 评估 ----------
+    def evaluate_segment(mask, tag: str) -> pd.DataFrame:
+        y_true = C[mask]                          # (N, H_MAX)
+        rows = []
+        for mode in ("A", "B", "C"):
+            rh_med, rh_up = predict(*models[mode], mask)
+            for h in (24, 48, 72):
+                yt = y_true[:, h - 1]
+                # 逐点精度用中位数；事件检测用**上分位数**
+                m_pt = evaluate(yt, rh_med[:, h - 1], 1e9)      # 只取 RMSE/R2/bias
+                for tname, thr in THRESHOLDS.items():
+                    m = evaluate(yt, rh_up[:, h - 1], thr)
+                    m.update({"segment": tag, "mode": mode, "horizon_h": h,
+                              "threshold": tname,
+                              "dur_MAE_h": duration_err(yt, rh_up[:, h - 1], thr),
+                              # 同时给出中位数口径的事件指标，证明"用错分位数"就是 F1=0 的原因
+                              "med_F1": evaluate(yt, rh_med[:, h - 1], thr)["F1"],
+                              **duration_metrics(yt, rh_up[:, h - 1], thr),
+                              **{f"pt_{k}": v for k, v in m_pt.items()
+                                 if k in ("RMSE", "R2", "bias")}})
+                    rows.append(m)
+        return pd.DataFrame(rows)
+
     print(f"\n{'=' * 88}\n[5] 测试段评估（2021-2025）\n{'=' * 88}")
-    y_true = C[te_s]                          # (N, H_MAX)
-    rows = []
-    for mode in ("A", "B", "C"):
-        rh_med, rh_up = predict(*models[mode], te_s)
-        for h in (24, 48, 72):
-            yt = y_true[:, h - 1]
-            # 逐点精度用中位数；事件检测用**上分位数**
-            m_pt = evaluate(yt, rh_med[:, h - 1], 1e9)      # 只取 RMSE/R2/bias
-            for tname, thr in THRESHOLDS.items():
-                m = evaluate(yt, rh_up[:, h - 1], thr)
-                m.update({"mode": mode, "horizon_h": h, "threshold": tname,
-                          "dur_MAE_h": duration_err(yt, rh_up[:, h - 1], thr),
-                          # 同时给出中位数口径的事件指标，证明"用错分位数"就是 F1=0 的原因
-                          "med_F1": evaluate(yt, rh_med[:, h - 1], thr)["F1"],
-                          **{f"pt_{k}": v for k, v in m_pt.items()
-                             if k in ("RMSE", "R2", "bias")}})
-                rows.append(m)
-    df = pd.DataFrame(rows)
+    df = evaluate_segment(te_s, "test")
     df.to_csv(RESULTS / "exp03_abc_ablation.csv", index=False)
 
-    for h in (24, 48, 72):
-        print(f"\n  --- 时效 h = {h} h ---")
-        sub = df[df.horizon_h == h]
-        print(sub[["threshold", "mode", "pt_RMSE", "pt_R2", "base_rate", "pred_rate",
-                   "pred_p95", "pred_max", "precision", "recall", "F1", "AUC",
-                   "med_F1", "dur_MAE_h"]].to_string(index=False))
+    # 验证段（2020）：此前算完从未使用。把同一套指标在验证段也跑一遍，用来
+    # 回答"这个结论是不是测试段特有的"——判据要在两段上一致才算稳。
+    dfv = evaluate_segment(va_s, "val")
+    dfv.to_csv(RESULTS / "exp03_abc_ablation_val.csv", index=False)
+
+    for tag, d in (("验证段 2020", dfv), ("测试段 2021-2025", df)):
+        for h in (24, 48, 72):
+            print(f"\n  --- [{tag}] 时效 h = {h} h ---")
+            sub = d[d.horizon_h == h]
+            print(sub[["threshold", "mode", "pt_RMSE", "pt_R2", "base_rate", "pred_rate",
+                       "pred_p95", "pred_max", "precision", "recall", "F1", "AUC",
+                       "med_F1", "hit_window", "false_window",
+                       "cond_dur_MAE_h"]].to_string(index=False))
 
     # ---------- 核心判据 ----------
     print(f"\n{'=' * 88}\n[6] 核心判据：C 是否显著优于 B？\n{'=' * 88}")
-    verdict = []
-    for h in (24, 48, 72):
-        for tname in THRESHOLDS:
-            b = df[(df.horizon_h == h) & (df.threshold == tname) & (df["mode"] == "B")].iloc[0]
-            c = df[(df.horizon_h == h) & (df.threshold == tname) & (df["mode"] == "C")].iloc[0]
-            d_f1 = c.F1 - b.F1
-            d_auc = (c.AUC - b.AUC) if np.isfinite(c.AUC) and np.isfinite(b.AUC) else np.nan
-            verdict.append({"horizon_h": h, "threshold": tname,
+
+    def verdict_of(d: pd.DataFrame, tag: str) -> pd.DataFrame:
+        out = []
+        for h in (24, 48, 72):
+            for tname in THRESHOLDS:
+                b = d[(d.horizon_h == h) & (d.threshold == tname)
+                      & (d["mode"] == "B")].iloc[0]
+                c = d[(d.horizon_h == h) & (d.threshold == tname)
+                      & (d["mode"] == "C")].iloc[0]
+                d_f1 = c.F1 - b.F1
+                d_auc = ((c.AUC - b.AUC)
+                         if np.isfinite(c.AUC) and np.isfinite(b.AUC) else np.nan)
+                out.append({"segment": tag, "horizon_h": h, "threshold": tname,
                             "F1_B": b.F1, "F1_C": c.F1, "dF1": round(d_f1, 4),
                             "AUC_B": b.AUC, "AUC_C": c.AUC,
                             "dAUC": round(d_auc, 4) if np.isfinite(d_auc) else np.nan,
                             "C_wins": bool(d_f1 > 0)})
-    dv = pd.DataFrame(verdict)
+        return pd.DataFrame(out)
+
+    dv_val = verdict_of(dfv, "val")
+    dv_test = verdict_of(df, "test")
+    dv = pd.concat([dv_val, dv_test], ignore_index=True)
     print(dv.to_string(index=False))
     dv.to_csv(RESULTS / "exp03_verdict.csv", index=False)
-    win = dv.C_wins.mean()
-    print(f"\n  C 优于 B 的比例：{win*100:.1f}%")
-    if win >= 0.6:
-        print("  => 判据通过：算子导出的内生权重带来实质增益，算法创新主张成立。")
+
+    # B 相对 A 的增益是另一条独立的判据：风险对齐训练本身有没有用。
+    print("\n  --- 参照：B（固定阈值 twCRPS）相对 A（纯 MSE）---")
+    ab_rows = []
+    for tag, d in (("val", dfv), ("test", df)):
+        for h in (24, 48, 72):
+            a = d[(d.horizon_h == h) & (d["mode"] == "A")]
+            b = d[(d.horizon_h == h) & (d["mode"] == "B")]
+            if a.F1.mean() > 0 or b.F1.mean() > 0:
+                ab_rows.append({"segment": tag, "horizon_h": h,
+                                "A_F1_mean": round(float(a.F1.mean()), 4),
+                                "B_F1_mean": round(float(b.F1.mean()), 4),
+                                "A_AUC_mean": round(float(a.AUC.mean()), 4),
+                                "B_AUC_mean": round(float(b.AUC.mean()), 4)})
+    d_ab = pd.DataFrame(ab_rows)
+    print(d_ab.to_string(index=False))
+    d_ab.to_csv(RESULTS / "exp03_ab_fixed_threshold.csv", index=False)
+
+    win_va, win_te = dv_val.C_wins.mean(), dv_test.C_wins.mean()
+    print(f"\n  C 优于 B 的比例：验证段 {win_va*100:.1f}%（{int(dv_val.C_wins.sum())}"
+          f"/{len(dv_val)}）  测试段 {win_te*100:.1f}%（{int(dv_test.C_wins.sum())}"
+          f"/{len(dv_test)}）")
+    if win_va >= 0.6 and win_te >= 0.6:
+        print("  => 判据通过：算子导出的内生权重在两段上都带来实质增益。")
     else:
-        print("  => 判据未通过：增益不足以支撑'内生权重'这一创新主张，")
-        print("     需回到特征设计或权重形式上重做，**不得在报告中夸大**。")
+        print("  => 判据未通过：算子导出的内生权重不足以支撑独立创新主张。")
+        print("     这不是脚本出错，也不是可以调参修好的东西——请**如实披露**：")
+        print("     B 相对 A（纯 MSE）的增益成立，风险对齐训练本身有效；")
+        print("     但把固定阈值换成算子导出的内生权重（C）没有进一步增益。")
+        print("     报告中不得把 C 当作已验证的创新点。")
 
     (RESULTS / "exp03_config.json").write_text(json.dumps({
         "n_quantiles": N_QUANTILES, "input_window": INPUT_WINDOW,
         "h_max": H_MAX, "rh_crit": RH_CRIT,
-        "ridge_beta": transport.cfg.ridge_beta,
+        "ridge_beta": beta_star,
+        "ridge_beta_val_r2": round(float(beta_val_r2), 4),
+        "ridge_beta_grid": list(BETA_GRID),
         "n_features": int(transport.n_features_in_),
         "train_end": TRAIN_END, "val_end": VAL_END,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
