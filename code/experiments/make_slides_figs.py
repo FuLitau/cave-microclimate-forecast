@@ -70,7 +70,7 @@ def fig_objective_mismatch() -> None:
     order = ["A", "B", "C"]
     d = d.set_index("mode").loc[order]
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.3))
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 3.7))
 
     # 左：点精度 vs 事件 F1
     ax = axes[0]
@@ -88,7 +88,7 @@ def fig_objective_mismatch() -> None:
     ax.set_ylim(0, 0.62)
     ax.set_title("① 目标函数错配：平均意义上很准，风险意义上失效", fontsize=11.5,
                  color=NAVY, fontweight="bold", pad=10)
-    ax.legend(fontsize=8.5, frameon=False, loc="upper left")
+    ax.legend(fontsize=8.5, frameon=False, loc="upper right")
     ax.grid(axis="y", alpha=0.25, linestyle="--")
     ax.set_axisbelow(True)
 
@@ -101,19 +101,16 @@ def fig_objective_mismatch() -> None:
     for xi, v in enumerate(pm):
         ax.text(xi, v + 1.8, f"{v:.1f}%", ha="center", fontsize=10.5, fontweight="bold",
                 color=NAVY)
-    ax.annotate("A 组预报值\n永远够不到阈值", xy=(0, pm[0]), xytext=(0.12, 18),
-                fontsize=9, color=RED,
-                arrowprops=dict(arrowstyle="->", color=RED, lw=1.4))
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=9)
     ax.set_ylabel("预报可达最高窟内 RH (%)")
     ax.set_ylim(0, 96)
-    ax.set_title("② A 组预报极值被压到 52.8%——结构上从不触发预警", fontsize=11.5,
+    ax.set_title("② A 组超阈召回率仅 4.7%——漏报 95% 以上的事件", fontsize=11.5,
                  color=NAVY, fontweight="bold", pad=10)
     ax.grid(axis="y", alpha=0.25, linestyle="--")
     ax.set_axisbelow(True)
 
-    fig.suptitle("窟内 RH 预测：R² = 0.42 但超阈 F1 = 0.000（测试段 2021–2025，h=24h）",
+    fig.suptitle("窟内 RH 预测：点 R² = 0.589 但超阈召回率仅 0.047（测试段 2021–2025，h=24h）",
                  fontsize=12.5, color=NAVY, fontweight="bold", y=1.045)
     save(fig, "fig1_objective_mismatch.png")
 
@@ -129,14 +126,14 @@ def fig_baseline() -> None:
         ("RidgeDirect(无延迟嵌入)", "Ridge 直接回归（无算子）", BLUE, ""),
         ("Climatology(可部署)", "气候态基线", CYAN, ""),
         ("Persistence-operator(可部署)", "持续性（算子自持）", ORANGE, ""),
-        ("FirstOrderTransfer(初稿方案)", "初稿方案 一阶传递函数", RED, ""),
+        ("FirstOrderTransfer-仅外场滞后(初稿原文)", "初稿·原文形式\n（无自回归）", RED, ""),
     ]
     horizons = [24, 48, 72]
     x = np.arange(len(horizons))
     w = 0.135
     offs = (np.arange(len(show)) - (len(show) - 1) / 2) * w
 
-    fig, ax = plt.subplots(figsize=(11.4, 4.6))
+    fig, ax = plt.subplots(figsize=(11.4, 4.0))
     for off, (key, lab, col, hatch) in zip(offs, show):
         sub = d[d.model == key].set_index("horizon_h").loc[horizons]
         ax.bar(x + off, sub["AUC"], w, label=lab, color=col, hatch=hatch,
@@ -147,7 +144,7 @@ def fig_baseline() -> None:
     ax.set_xticklabels([f"提前 {h} h" for h in horizons], fontsize=10.5)
     ax.set_ylabel("超阈事件 AUC（62% 阈值）")
     ax.set_ylim(0.42, 0.90)
-    ax.set_title("超阈预警能力：初稿方案 ≈ 随机猜测，本作品在各时效稳定领先",
+    ax.set_title("超阈预警 AUC：可部署方案中本作品领先，初稿递归实现 ≈ 随机猜测",
                  fontsize=12.5, color=NAVY, fontweight="bold", pad=12)
     ax.legend(fontsize=8.2, ncol=3, frameon=False, loc="upper center",
               bbox_to_anchor=(0.5, -0.10))
@@ -160,7 +157,7 @@ def fig_baseline() -> None:
 def fig_readout() -> None:
     df = pd.read_csv(RES / "derisk03_readout_compare.csv", encoding="utf-8-sig")
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.3))
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 3.7))
 
     # 左：极值捕捉比
     ax = axes[0]
@@ -306,7 +303,7 @@ def fig_demo() -> None:
     if d.empty:
         d = df[df.scenario == df.scenario.iloc[0]].sort_values("step_h")
 
-    fig, ax = plt.subplots(figsize=(11.4, 4.4))
+    fig, ax = plt.subplots(figsize=(11.4, 3.7))
     ax.plot(d.step_h, d.RH_true, color=GREEN, lw=2.4, label="窟内真实 RH（合成标签）")
     ax.plot(d.step_h, d.RH_pred, color=NAVY, lw=2.4, ls="--", label="本作品 72h 滚动预报")
 
@@ -342,7 +339,7 @@ def fig_demo() -> None:
 # ============================================================ 图 7 预警提前量
 def fig_leadtime() -> None:
     df = pd.read_csv(RES / "derisk02_leadtime.csv", encoding="utf-8-sig")
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.2))
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 3.0))
 
     ax = axes[0]
     ths = ["62%(业务预警)", "67%(潮解起始)", "75%(吸湿突变)"]
@@ -364,7 +361,7 @@ def fig_leadtime() -> None:
     ax.set_xticklabels(["62%\n业务预警", "67%\n潮解起始", "75%\n吸湿突变"], fontsize=9.5)
     ax.set_ylabel("事件检出率 (%)")
     ax.set_ylim(0, 48)
-    ax.set_title("本作品事件检出率（初稿方案全部为 0%）", fontsize=11.3,
+    ax.set_title("本作品事件检出率（初稿·静态传递 62% 档仅 29.8%）", fontsize=11.3,
                  color=NAVY, fontweight="bold", pad=10)
     ax.legend(fontsize=8.8, frameon=False)
     ax.grid(axis="y", alpha=0.25, linestyle="--")
@@ -386,7 +383,7 @@ def fig_leadtime() -> None:
                 color=NAVY, fontweight="bold")
     ax.set_xlabel("平均预警提前量（小时）")
     ax.set_xlim(0, 66)
-    ax.set_title("平均预警提前量（62% 档达 42.6 h）", fontsize=11.3,
+    ax.set_title("平均预警提前量（62% 档达 46.7 h）", fontsize=11.3,
                  color=NAVY, fontweight="bold", pad=10)
     ax.grid(axis="x", alpha=0.25, linestyle="--")
     ax.set_axisbelow(True)

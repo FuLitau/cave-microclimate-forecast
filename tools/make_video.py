@@ -254,7 +254,7 @@ def main() -> None:
                 for fp in demo_frames:
                     frame = Image.open(fp).convert("RGB")
                     frame = frame.resize((W, H))
-                    sub_img = subs[14]
+                    sub_img = subs[ANIMATION_PAGE]
                     frame.paste(sub_img, (0, H - sub_img.height), sub_img)
                     writer.append_data(np.asarray(frame))
                     total_frames += 1
