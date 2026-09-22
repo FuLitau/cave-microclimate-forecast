@@ -2,6 +2,8 @@
 
 > 用**室外公开气象数据**，预报**石窟窟内**未来 24–72 小时的相对湿度风险。
 > 面向"第八届 AIC 全球校园人工智能算法精英大赛 · 智慧气象"主题赛。
+>
+> **代码仓库**：<https://github.com/FuLitau/cave-microclimate-forecast>（Public）
 
 **一句话**：把"预测窟内温湿度"这个文保应用问题，重构成一个**算法问题**——
 在**目标不可观测、标签稀缺、决策不可逆**的条件下，训练一个**可微的物理代理**，
@@ -112,7 +114,7 @@ code/
   src/losses/twcrps.py          阈值加权评分规则与三级决策
   src/data/power.py             NASA POWER 数据获取与清洗
   src/web/                      Flask 本地看板（前端只展示、不算数）
-  experiments/                  13 个实验脚本（标定 / 解风险 / 风险对齐 / 外部效度）
+  experiments/                  14 个实验脚本（标定 / 解风险 / 风险对齐 / 外部效度）
   results/                      全部实验的落盘结果（CSV / JSON，可审计）
   smoke_cave.py                 物理模型断言式自检
 docs/
