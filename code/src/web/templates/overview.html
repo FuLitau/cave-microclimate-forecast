@@ -69,14 +69,45 @@ fetch('/api/forecast').then(r=>r.json()).then(d=>{
 function draw(i){
   const s = DATA.scenarios[i];
   document.getElementById('origin').textContent = '预报起点：' + s.origin.slice(0,16) + ' UTC';
-  const lv = s.level[s.level.length-1];
+  // 预警系统报告的是整个预报窗口内的最高风险，而不是终点时刻的瞬时值
+  const lv = (s.max_level !== undefined) ? s.max_level : s.level[s.level.length-1];
   const cls = ['p0','p1','p2'][lv], txt = ['正常开放','限流','关闭高危洞窟'][lv];
-  document.getElementById('advice').innerHTML =
-    '<span class="pill '+cls+'">72h 后建议：'+txt+'</span>';
+  let pills = '<span class="pill '+cls+'">72 h 窗口内最高风险：'+txt+'</span>';
+  if(s.max_level_raw !== undefined){
+    const lr = s.max_level_raw;
+    pills += ' <span class="pill '+['p0','p1','p2'][lr]+'">对照·天真绝对阈值口径：'
+           + ['正常开放','限流','关闭高危洞窟'][lr] + '</span>';
+  }
+  document.getElementById('advice').innerHTML = pills;
 
   CH1 = CH1 || mk('c1');
   const markLine = (v,c,n)=>({yAxis:v, lineStyle:{color:c,type:'dashed'},
       label:{formatter:n+' '+v+'%', position:'insideEndTop', color:c}});
+  const markLineS = (v,c,n)=>({yAxis:v, lineStyle:{color:c,type:'solid',width:1.2},
+      label:{formatter:n+' '+v+'%', position:'insideEndBottom', color:c}});
+  // 标定门限：由独立标定段按业务基准率定出（不等于物理阈值）
+  const cuts = [];
+  if(s.cut_62){ const c62=s.cut_62[0], c67=s.cut_67[0], c75=s.cut_75[0];
+    cuts.push(markLineS(c62,'#f5b74e','标定门限62'), markLineS(c67,'#ff9f43','标定门限67'),
+              markLineS(c75,'#ff5f6d','标定门限75')); }
+  const series = [
+    {name:'风险对齐分位数读出 τ=0.95（主）', type:'line', smooth:true, data:s.RH_pred,
+     lineStyle:{width:2.5,color:'#4da3ff'}, itemStyle:{color:'#4da3ff'},
+     markLine:{silent:true, symbol:'none', data:[
+       markLine(TH.warn,'#f5b74e','预警'), markLine(TH.crit,'#ff9f43','潮解'),
+       markLine(TH.close,'#ff5f6d','关闭'), ...cuts]}}
+  ];
+  if(s.RH_pred_lin){
+    series.push({name:'线性 MSE 读出（旧口径对照）', type:'line', smooth:true,
+      data:s.RH_pred_lin, lineStyle:{width:1.8,type:'dashed',color:'#b98cff'},
+      itemStyle:{color:'#b98cff'}});
+  }
+  series.push(
+    {name:'实况（合成标签）', type:'line', smooth:true, data:s.RH_true,
+     lineStyle:{width:1.6,type:'dotted',color:'#3ecf8e'}, itemStyle:{color:'#3ecf8e'}},
+    {name:'窟外 RH', type:'line', smooth:true, data:s.RH_out,
+     lineStyle:{width:1.4,color:'#8fa0bf'}, itemStyle:{color:'#8fa0bf'}}
+  );
   CH1.setOption({
     backgroundColor:'transparent',
     title:{text:s.scenario, left:'center', textStyle:{fontSize:13,color:'#8fa0bf'}},
@@ -87,17 +118,7 @@ function draw(i){
            axisLine:{lineStyle:{color:'#2a3550'}}},
     yAxis:{type:'value', name:'窟内 RH (%)', min:0, max:100,
            splitLine:{lineStyle:{color:'#222c42'}}},
-    series:[
-      {name:'窟内 RH 预报', type:'line', smooth:true, data:s.RH_pred,
-       lineStyle:{width:2.5,color:'#4da3ff'}, itemStyle:{color:'#4da3ff'},
-       markLine:{silent:true, symbol:'none', data:[
-         markLine(TH.warn,'#f5b74e','预警'), markLine(TH.crit,'#ff9f43','潮解'),
-         markLine(TH.close,'#ff5f6d','关闭')]}},
-      {name:'实况（合成标签）', type:'line', smooth:true, data:s.RH_true,
-       lineStyle:{width:1.6,type:'dotted',color:'#3ecf8e'}, itemStyle:{color:'#3ecf8e'}},
-      {name:'窟外 RH', type:'line', smooth:true, data:s.RH_out,
-       lineStyle:{width:1.4,color:'#8fa0bf'}, itemStyle:{color:'#8fa0bf'}}
-    ]
+    series:series
   });
 
   CH2 = CH2 || mk('c2');

@@ -28,13 +28,17 @@ def main() -> int:
         doc = pymupdf.open(str(p))
         text = "\n".join(page.get_text() for page in doc)
         repl = text.count("\ufffd")
+        # 缺字形：PyMuPDF 用 U+0000 表示"有字位但画不出字形"。
+        # 详见 tools/check_glyphs.py——那里还会检查**静默丢弃**（不留 U+0000）
+        # 的上标字符，两层都要跑。
+        nul = text.count("\x00")
         hits = {k: text.count(k) for k in LEAKS if text.count(k) > 0}
         size_kb = p.stat().st_size / 1024
-        status = "OK" if (repl == 0 and not hits) else "WARN"
+        status = "OK" if (repl == 0 and nul == 0 and not hits) else "WARN"
         if status != "OK":
             bad += 1
         print(f"{name:28s} {doc.page_count:>3d}页 {size_kb:>7.0f}KB  {len(text):>6d}字  "
-              f"U+FFFD={repl}  {status}")
+              f"U+FFFD={repl}  缺字形={nul}  {status}")
         for k, v in hits.items():
             print(f"    泄漏 {k!r} x{v}")
         doc.close()

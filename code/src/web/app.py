@@ -148,7 +148,9 @@ def api_forecast():
         g = g.sort_values("step_h")
         # 预警系统应报告**整个预报窗口内的最高风险**，而不是终点时刻的瞬时值
         lv = int(g["level"].max())
-        out.append({
+        # 天真口径（直接拿物理阈值 62/67/75 比预报值）作为对照同时给出
+        lv_raw = int(g["level_raw"].max()) if "level_raw" in g.columns else 0
+        row = {
             "scenario": name,
             "origin": g["origin"].iloc[0],
             "step_h": g["step_h"].tolist(),
@@ -165,8 +167,24 @@ def api_forecast():
                             if (g["level"] >= 1).any() else None),
             "T_out": g["T_out"].tolist(),
             "RH_out": g["RH_out"].tolist(),
-        })
-    return jsonify({"scenarios": out, "thresholds": THRESHOLDS})
+        }
+        # ---- 读出层对照与标定口径（指标化演示的一部分，非装饰） ----
+        for col, key in (("RH_pred_lin", "RH_pred_lin"), ("RH_pred_tau90", "RH_pred_tau90"),
+                         ("level_raw", "level_raw")):
+            if col in g.columns:
+                row[key] = g[col].tolist()
+        if "RH_pred_lin" in g.columns:
+            row["peak_RH_pred_lin"] = round(float(g["RH_pred_lin"].max()), 2)
+        if "level_raw" in g.columns:
+            row["max_level_raw"] = lv_raw
+            row["advice_raw"] = ADVICE[lv_raw]
+        for col in ("cut_62", "cut_67", "cut_75"):
+            if col in g.columns:
+                row[col] = [round(float(v), 2) for v in g[col].tolist()]
+        out.append(row)
+    return jsonify({"scenarios": out, "thresholds": THRESHOLDS,
+                    "readout": load_stats().get("readout", "linear-MSE"),
+                    "calib_year": load_stats().get("calib_year")})
 
 
 @app.get("/api/history")

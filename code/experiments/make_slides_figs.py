@@ -318,7 +318,12 @@ def fig_demo() -> None:
 
     fig, ax = plt.subplots(figsize=(11.4, 3.7))
     ax.plot(d.step_h, d.RH_true, color=GREEN, lw=2.4, label="窟内真实 RH（合成标签）")
-    ax.plot(d.step_h, d.RH_pred, color=NAVY, lw=2.4, ls="--", label="本作品 72h 滚动预报")
+    ax.plot(d.step_h, d.RH_pred, color=NAVY, lw=2.4,
+            label="风险对齐分位数读出 τ=0.95（本作品）")
+    has_lin = "RH_pred_lin" in d.columns
+    if has_lin:
+        ax.plot(d.step_h, d.RH_pred_lin, color="#b98cff", lw=2.0, ls="--",
+                label="线性 MSE 读出（旧口径）")
 
     for lab, val, col in [("62% 业务预警", 62.0, ORANGE),
                           ("67% 潮解起始", 67.0, "#b8860b"),
@@ -327,6 +332,13 @@ def fig_demo() -> None:
         ax.text(71.5, val + 1.0, lab, color=col, fontsize=8.8, ha="right",
                 fontweight="bold")
 
+    # 由独立标定段（2021）定出的报警门限（62% 档 @ h=24）
+    if "cut_62" in d.columns:
+        cut = float(d["cut_62"].iloc[0])
+        ax.axhline(cut, color=ORANGE, lw=1.8, ls="-.", alpha=0.9)
+        ax.text(1.0, cut + 1.2, f"标定门限 62% 档 = {cut:.1f}%（独立标定段定出）",
+                color=ORANGE, fontsize=9.0, ha="left", fontweight="bold")
+
     mx = d.loc[d.RH_true.idxmax()]
     ax.annotate(f"真实峰值 {mx.RH_true:.1f}%",
                 xy=(mx.step_h, mx.RH_true), xytext=(mx.step_h - 16, mx.RH_true + 9),
@@ -334,9 +346,15 @@ def fig_demo() -> None:
                 arrowprops=dict(arrowstyle="->", color=GREEN, lw=1.4))
     mp = d.loc[d.RH_pred.idxmax()]
     ax.annotate(f"预报峰值 {mp.RH_pred:.1f}%", xy=(mp.step_h, mp.RH_pred),
-                xytext=(mp.step_h + 4, mp.RH_pred - 14), fontsize=9.2, color=NAVY,
+                xytext=(mp.step_h + 4, mp.RH_pred - 15), fontsize=9.2, color=NAVY,
                 fontweight="bold",
                 arrowprops=dict(arrowstyle="->", color=NAVY, lw=1.4))
+    if has_lin:
+        ml = d.loc[d.RH_pred_lin.idxmax()]
+        ax.annotate(f"旧口径 {ml.RH_pred_lin:.1f}%", xy=(ml.step_h, ml.RH_pred_lin),
+                    xytext=(max(2.0, ml.step_h - 30), ml.RH_pred_lin - 13),
+                    fontsize=9.0, color="#8a6bd0", fontweight="bold",
+                    arrowprops=dict(arrowstyle="->", color="#8a6bd0", lw=1.2))
 
     ax.set_xlabel("预报提前量（小时）")
     ax.set_ylabel("窟内相对湿度 RH (%)")
