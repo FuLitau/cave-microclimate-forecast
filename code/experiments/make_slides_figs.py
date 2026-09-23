@@ -38,6 +38,19 @@ for cand in ("Deng.ttf", "Dengb.ttf", "simhei.ttf", "simkai.ttf"):
 plt.rcParams["axes.unicode_minus"] = False
 plt.rcParams["figure.dpi"] = 200
 plt.rcParams["savefig.bbox"] = "tight"
+
+
+def _r3(v: float) -> str:
+    """三位小数、**四舍五入（half-up）**。
+
+    不能用 ``f"{v:.3f}"``：它走的是 Python 的 half-even 舍入，
+    当落盘值恰为 x.xxx5 时会向下取整。实测 ``AUC_62%`` 的 GBDT 值落盘为
+    ``0.8825``，``f"{v:.3f}"`` 会渲染成 ``0.882``，而正文引用的是 ``0.883``，
+    图文相差 0.001——评委对照截图会直接看到矛盾。
+    """
+    from decimal import ROUND_HALF_UP, Decimal
+
+    return str(Decimal(repr(float(v))).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP))
 plt.rcParams["axes.edgecolor"] = "#8a94a6"
 plt.rcParams["axes.labelcolor"] = "#1f2d3d"
 plt.rcParams["text.color"] = "#1f2d3d"
@@ -79,8 +92,8 @@ def fig_objective_mismatch() -> None:
     ax.bar(x - w / 2, d["R2"], w, label="点精度 R²（越高越好）", color=BLUE)
     ax.bar(x + w / 2, d["F1"], w, label="超阈事件 F1（业务真正关心）", color=RED)
     for xi, (r2, f1) in enumerate(zip(d["R2"], d["F1"])):
-        ax.text(xi - w / 2, r2 + 0.012, f"{r2:.3f}", ha="center", fontsize=9.5, color=NAVY)
-        ax.text(xi + w / 2, f1 + 0.012, f"{f1:.3f}", ha="center", fontsize=9.5,
+        ax.text(xi - w / 2, r2 + 0.012, _r3(r2), ha="center", fontsize=9.5, color=NAVY)
+        ax.text(xi + w / 2, f1 + 0.012, _r3(f1), ha="center", fontsize=9.5,
                 color=RED, fontweight="bold")
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=9)
@@ -169,8 +182,8 @@ def fig_readout() -> None:
     ax.bar(x - w / 2, lin["peak_ratio"], w, label="线性岭回归（闭式解）", color=BLUE)
     ax.bar(x + w / 2, gb["peak_ratio"], w, label="GBDT 非线性读出", color=ORANGE)
     for xi, (a, b) in enumerate(zip(lin["peak_ratio"], gb["peak_ratio"])):
-        ax.text(xi - w / 2, a + 0.012, f"{a:.3f}", ha="center", fontsize=9, color=NAVY)
-        ax.text(xi + w / 2, b + 0.012, f"{b:.3f}", ha="center", fontsize=9,
+        ax.text(xi - w / 2, a + 0.012, _r3(a), ha="center", fontsize=9, color=NAVY)
+        ax.text(xi + w / 2, b + 0.012, _r3(b), ha="center", fontsize=9,
                 color=ORANGE, fontweight="bold")
     ax.set_xticks(x)
     ax.set_xticklabels([f"提前 {h} h" for h in hs], fontsize=10)
@@ -195,8 +208,8 @@ def fig_readout() -> None:
     for xi, c in enumerate(cols):
         a = d24.loc["线性岭回归", c]
         b = d24.loc["GBDT 非线性", c]
-        ax.text(xi - w / 2, a + 0.007, f"{a:.3f}", ha="center", fontsize=8.8, color=NAVY)
-        ax.text(xi + w / 2, b + 0.007, f"{b:.3f}", ha="center", fontsize=8.8,
+        ax.text(xi - w / 2, a + 0.007, _r3(a), ha="center", fontsize=8.8, color=NAVY)
+        ax.text(xi + w / 2, b + 0.007, _r3(b), ha="center", fontsize=8.8,
                 color=ORANGE, fontweight="bold")
         ax.text(xi, 0.455, f"+{(b - a) * 100:.1f} pp", ha="center", fontsize=8.6,
                 color=GREEN, fontweight="bold")
@@ -394,11 +407,21 @@ def fig_leadtime() -> None:
 
 
 if __name__ == "__main__":
+    import sys
+
     print("生成答辩图表 -> dist/figs/")
+    failed: list[str] = []
     for fn in (fig_objective_mismatch, fig_baseline, fig_readout, fig_crosscave,
                fig_layers, fig_demo, fig_leadtime):
         try:
             fn()
         except Exception as exc:  # noqa: BLE001
+            failed.append(fn.__name__)
             print(f"  ❌ {fn.__name__}: {type(exc).__name__}: {exc}")
+    if failed:
+        # 关键：以前这里只打印 ❌ 就结束，退出码仍是 0 —— CSV 列名或基线键名一旦漂移，
+        # 图表会静默缺图/嵌旧图，而重跑流程不会失败（历史上真的发生过：
+        # fig2 引用了在新 CSV 中已不存在的 "FirstOrderTransfer(初稿方案)"，PPT 页10 长期嵌着旧图）。
+        sys.exit(f"❌ 有 {len(failed)} 张图生成失败：{', '.join(failed)}。"
+                 f"请检查 code/results/ 下的 CSV 列名与基线键名是否变动。")
     print("完成。")

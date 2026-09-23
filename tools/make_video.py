@@ -216,6 +216,16 @@ def main() -> None:
     if not PDF.exists():
         sys.exit(f"缺少 {PDF}，请先运行 tools/build_ppt.py 并导出 PDF")
 
+    # 过期提示：PDF 比现有 mp4 新 ⇒ 现有视频是旧版画面。本脚本正要重新渲染，故仅告警不退出；
+    # 提交前的把关由 tools/check_freshness.py 负责（那里会以非零退出码报错）。
+    if OUT.exists() and PDF.stat().st_mtime > OUT.stat().st_mtime:
+        import datetime as _dt
+        _p = _dt.datetime.fromtimestamp(PDF.stat().st_mtime)
+        _o = _dt.datetime.fromtimestamp(OUT.stat().st_mtime)
+        print(f"⚠️  现有视频已过期：{PDF.name} 修改于 {_p:%Y-%m-%d %H:%M:%S}，"
+              f"晚于 {OUT.name}（{_o:%Y-%m-%d %H:%M:%S}）。正在重新渲染覆盖。",
+              file=sys.stderr)
+
     tmp = Path(tempfile.mkdtemp(prefix="vid_"))
     try:
         slides = render_slides(tmp)

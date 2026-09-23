@@ -1,0 +1,44 @@
+复核 GLM 回执：清零口径错挂、修复两处静默过期缺陷、补一条不利披露
+
+## 高：口径错挂（已扩散到 5 处对外材料）
+「AUC 在 62% 口径下五胜一平」在落盘中不存在：
+- B vs A @62% 单阈 = 6 胜 0 负（+0.0111/+0.0131/+0.0755/+0.0388/+0.0426/+0.0523）
+- 三档平均口径 = 5 胜 1 负（val 48h 0.8814→0.8675）
+- 「五胜一平」唯一能对到的是 C vs B @62%（exp03_verdict.csv test72h dAUC +0.0001 记平）
+已统一改为「AUC 在 62% 口径下六格全部为正增益（三档平均口径 5 胜 1 负，
+验证段 48 h 由 0.881 微降至 0.868）」，涉及 README.md、docs/01:242、
+docs/03:369/389、docs/06:235，并在 docs/交接-GLM回执-第二轮.md 加更正块。
+
+## 中：其余失实/僵尸数字
+- dist/提交清单.md：zip「140 条目/53.6 MB」→ 实测 166 条目/54.12 MiB
+- docs/03 附录 1：「15,700 时次」在仓内无落盘来源，换为可复算的
+  9 洞 / 16,944 配对时次，并加可复现性说明（iccp_transfer.csv 只有 9 行，
+  logger_light/dark 是记录仪编号不是台数；「18」只能对到 iccp_harmonics.csv 的 18 行）
+- docs/03:652 ICCP 行与 docs/交接-GLM回执-第二轮.md 第 6.5 节同步更正
+
+## 中：两处会把错误产物静默交付出去的缺陷
+- tools/make_video.py：原先只判 PDF 是否存在，不比较时间戳 ->
+  「改幻灯片后忘了重跑视频」会交付旧画面且无任何报错（审计代理靠逐帧比对才发现）。
+  现加入过期告警；把关交 tools/check_freshness.py（新增，违反即非零退出）。
+- code/experiments/make_slides_figs.py：__main__ 的 except Exception 只打印失败、
+  退出码仍为 0 -> CSV 列名/基线键名漂移时静默缺图（曾真实发生：fig2 引用新 CSV 中
+  已不存在的键，PPT 页10 长期嵌旧图）。现聚合失败并在末尾 sys.exit。
+
+## 低：图文舍入不一致
+derisk03 GBDT h24 AUC_62% 落盘 0.8825，f"{v:.3f}" 走 half-even 渲染成 0.882，
+而正文写 0.883。新增 _r3()（Decimal ROUND_HALF_UP）并统一用于 fig1/fig2/fig3 标注。
+
+## 低：补一条对己不利的披露
+h=24/75% 档本作品 AUC 0.8315 低于初稿静态传递 0.8444、oracle 0.8589。
+此前 PPT 页17 该档只报检出率与提前量。现新增 AUC 列如实列出三个数，
+讲稿备注补上解释（75% 档 n_onset=11，排序能力主要来自回归到均值的保守性，
+静态传递更保守故 AUC 略高，但其 F1 仍为 0.000、业务上不可用）。
+
+## 其他
+- code/experiments/derisk_03_quantile_readout.py：34.6%（72h 终点）与
+  38.4%（窗口最大）两个统计量加 note 区分，避免混用
+- code/experiments/_audit_tmp{,2,3} 收拢为 code/experiments/audit/ 并加 README
+
+验证：check_all / check_colors / check_layout / check_math / check_compliance /
+check_freshness / build_package 全部通过；01=14页, 02=6页, 03=17页, 04=21页,
+06=9页，视频 4:49 / 15.8 MB，zip 166 条目 / 54.1 MB。
