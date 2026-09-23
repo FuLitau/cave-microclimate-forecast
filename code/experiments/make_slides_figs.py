@@ -123,7 +123,7 @@ def fig_objective_mismatch() -> None:
     ax.grid(axis="y", alpha=0.25, linestyle="--")
     ax.set_axisbelow(True)
 
-    fig.suptitle("窟内 RH 预测：点 R² = 0.589 但超阈召回率仅 0.047（测试段 2021–2025，h=24h）",
+    fig.suptitle("窟内 RH 预测：点 R² = 0.585 但超阈召回率仅 0.047（测试段 2021–2025，h=24h）",
                  fontsize=12.5, color=NAVY, fontweight="bold", y=1.045)
     save(fig, "fig1_objective_mismatch.png")
 
@@ -414,7 +414,7 @@ def fig_leadtime() -> None:
                 color=NAVY, fontweight="bold")
     ax.set_xlabel("平均预警提前量（小时）")
     ax.set_xlim(0, 66)
-    ax.set_title("平均预警提前量（62% 档达 46.7 h）", fontsize=11.3,
+    ax.set_title("平均预警提前量（62% 档达 46.3 h）", fontsize=11.3,
                  color=NAVY, fontweight="bold", pad=10)
     ax.grid(axis="x", alpha=0.25, linestyle="--")
     ax.set_axisbelow(True)

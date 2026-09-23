@@ -1,29 +1,29 @@
 {
   "train_end": "2020-12-31",
   "ridge_beta": 1.0,
-  "spectral_radius_K": 0.988088,
+  "spectral_radius_K": 0.988081,
   "n_train": 175297,
   "n_test": 43847,
   "by_horizon": {
     "6": {
-      "direct_R2": 0.66833,
-      "rollout_R2": 0.50497
+      "direct_R2": 0.66831,
+      "rollout_R2": 0.50492
     },
     "12": {
-      "direct_R2": 0.60336,
-      "rollout_R2": 0.42345
+      "direct_R2": 0.60335,
+      "rollout_R2": 0.42343
     },
     "24": {
-      "direct_R2": 0.54469,
-      "rollout_R2": 0.31144
+      "direct_R2": 0.54468,
+      "rollout_R2": 0.31141
     },
     "48": {
-      "direct_R2": 0.47457,
-      "rollout_R2": 0.18296
+      "direct_R2": 0.47461,
+      "rollout_R2": 0.18287
     },
     "72": {
-      "direct_R2": 0.42868,
-      "rollout_R2": 0.11746
+      "direct_R2": 0.4287,
+      "rollout_R2": 0.11736
     }
   }
 }

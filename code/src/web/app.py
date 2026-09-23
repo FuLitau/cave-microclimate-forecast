@@ -66,7 +66,12 @@ def load_forecast() -> pd.DataFrame:
 def load_history() -> pd.DataFrame:
     df = _read_csv(RESULTS / "demo_history.csv")
     if not df.empty:
-        df["time"] = pd.to_datetime(df["time"])
+        # demo_history.csv 的时间列带 UTC 偏移（`2021-12-31 01:00:00+00:00`）。
+        # 必须显式归一化为 **naive UTC**，否则 `load_history()` 出来的是
+        # `datetime64[ns, UTC]`，与 /api/history 里 naive 的 `pd.Timestamp(start)`
+        # 比较会抛 `TypeError: Invalid comparison between dtype=datetime64[ns, UTC]
+        # and Timestamp` → 该接口 HTTP 500，回放页开箱即坏。
+        df["time"] = pd.to_datetime(df["time"], utc=True).dt.tz_localize(None)
     return df
 
 
@@ -196,9 +201,13 @@ def api_history():
     start = request.args.get("start")
     end = request.args.get("end")
     if start:
-        df = df[df["time"] >= pd.Timestamp(start)]
+        ts = pd.to_datetime(start, errors="coerce")
+        if pd.notna(ts):
+            df = df[df["time"] >= ts]
     if end:
-        df = df[df["time"] <= pd.Timestamp(end)]
+        ts = pd.to_datetime(end, errors="coerce")
+        if pd.notna(ts):
+            df = df[df["time"] <= ts]
     if not start and not end:
         df = df.tail(24 * 30)
     # 抽样以降传输量（前端画图不需要逐时全量）

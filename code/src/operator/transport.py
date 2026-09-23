@@ -165,11 +165,33 @@ def build_features(
 
     Psi = np.concatenate(feats, axis=1)
 
-    # 序列开头的延迟坐标含 NaN（历史不足），用该列的首个有效值回填
+    # 序列开头的慢变滑动均值含 NaN（窗口未满）：最长窗口是 slow_windows 的最大值
+    # （默认 8760 h），故 NaN 区覆盖**前 max(slow_windows) − 1 = 8759 行**（2001 全年）；
+    # 快变延迟另贡献前 n_fast_lags = 48 行。取并集后按列分别回填。
+    # **回填策略：用该列首个有效值做后向填充**（等价于假设「窗口未满时该慢变量取首个满窗值」）。
+    #
+    # ⚠️ 历史缺陷（已修正）：早期实现用的是 `np.nanmean(Psi, axis=0)`，即**全序列列均值**。
+    # 那会把开头之后十几年（含测试段）的统计量回填进这 8759 行，是本文件
+    # 「延迟坐标逐行只依赖 t 及更早」承诺的一处泄漏。
+    #
+    # 口径边界（如实说明）：后向填充本身仍取用了 t = 8759 这一个时点的值，
+    # 严格做法是直接丢弃这些热启动行；这里保留行是为了不改变样本对齐。**关键是这 8759 行
+    # 始终落在训练段**（第 8759 行 = 2001-12-31，测试段从 2021 起），测试段每行的延迟坐标
+    # 都只依赖 t 及更早，**测试期无泄漏**这一结论不受影响。
+    #
+    # 量化影响面：`code/experiments/derisk_02_multihorizon.py` 修正前后结果**并不完全相同**
+    # （见 results/derisk02_full_log.txt 与 _audit/bak_derisk02/ 的逐文件比对）：
+    # 点预报 R² 变化 ≤ 1.7e-2、事件 F1 变化 ≤ 2.8e-3；75% 档小样本（n_onset=11）的
+    # 预警检出率变化最大，h=48 由 0.0000 升至 0.1818、h=72 由 0.0909 升至 0.1818。
+    # 算子谱的另一处改善：修正前 `results/derisk02_spectrum.csv` 含一个退化的 inf 周期模态，
+    # 修正后该模态消失（变为 71195.73 h 的低频模态），24 h 与 12 h 模态位置不变。
     if np.isnan(Psi).any():
-        col_mean = np.nanmean(Psi, axis=0)
-        idx = np.where(np.isnan(Psi))
-        Psi[idx] = np.take(col_mean, idx[1])
+        for j in range(Psi.shape[1]):
+            col = Psi[:, j]
+            bad = np.isnan(col)
+            if bad.any():
+                ok = ~bad
+                Psi[bad, j] = col[ok][0] if ok.any() else 0.0
 
     if names_out is not None:
         names_out.extend(names)

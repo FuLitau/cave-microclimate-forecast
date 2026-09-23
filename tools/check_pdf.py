@@ -22,7 +22,7 @@ print(doc[0].get_text()[:380])
 
 print("\n--- 中文渲染抽查 ---")
 probes = ["石窟天盾", "风险对齐", "延迟嵌入", "阈值加权", "合成标签",
-          "46.7 h", "0.141", "FirstOrderTransfer", "twCRPS"]
+          "46.3 h", "0.164", "FirstOrderTransfer", "twCRPS"]
 for probe in probes:
     print(f"  {probe:<20} {'OK' if probe in full else '** MISSING **'}")
 

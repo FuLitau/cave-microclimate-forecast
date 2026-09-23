@@ -16,7 +16,11 @@ import requests
 
 RECORD = "17505739"
 API = f"https://zenodo.org/api/records/{RECORD}"
-OUT = Path("code/data/raw/iccp")
+# 仓库根锚定：本文件在 <root>/tools/ 下，故 parents[1] 即仓库根。
+# （曾用相对路径 Path("code/data/raw/iccp")，依赖 cwd —— 从 code/ 目录执行会
+#  写进 code/code/data/raw/iccp，且退出码仍为 0，静默留下错位目录。）
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / "code" / "data" / "raw" / "iccp"
 
 HEADERS = {
     "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -78,6 +82,8 @@ def main() -> int:
         print(f"  - {key}  {size / 1e6:.2f} MB")
 
     # 2) 下载
+    failed: list[str] = []
+    ok = 0
     for f in files:
         key = f.get("key")
         url = (f.get("links") or {}).get("self")
@@ -86,29 +92,53 @@ def main() -> int:
         dest = OUT / key
         if dest.exists() and dest.stat().st_size == f.get("size"):
             print(f"[跳过] {key} 已完整")
+            ok += 1
             continue
         print(f"[下载] {key} <- {url}")
+        tmp = dest.with_suffix(dest.suffix + ".part")
         try:
             with _get(url, stream=True, timeout=180) as resp:
                 print(f"       HTTP {resp.status_code}")
                 if resp.status_code != 200:
                     print("       " + resp.text[:300])
+                    failed.append(f"{key}: HTTP {resp.status_code}")
                     continue
-                tmp = dest.with_suffix(dest.suffix + ".part")
                 got = 0
                 with tmp.open("wb") as fh:
                     for chunk in resp.iter_content(1 << 20):
                         fh.write(chunk)
                         got += len(chunk)
-                tmp.replace(dest)
-                print(f"       完成 {got / 1e6:.2f} MB -> {dest}")
+            # 长度校验：requests 的 IncompleteRead 只在读取时抛出，
+            # 若服务端提前断流且未抛异常，靠期望长度兜底。
+            want = f.get("size") or 0
+            if want and got != want:
+                failed.append(f"{key}: 只有 {got} B / 期望 {want} B")
+                print(f"       长度不符 {got} / {want}")
+                continue
+            tmp.replace(dest)
+            ok += 1
+            print(f"       完成 {got / 1e6:.2f} MB -> {dest}")
         except Exception as exc:  # noqa: BLE001
+            failed.append(f"{key}: {type(exc).__name__} {exc}")
             print(f"       失败: {exc}")
+        finally:
+            # 不留 .part 残档，避免下游误把半截文件当数据
+            if tmp.exists() and not dest.exists():
+                tmp.unlink(missing_ok=True)
+
+    print(f"\n成功 {ok} 个 / 失败 {len(failed)} 个")
+    for msg in failed:
+        print(f"  ✗ {msg}")
 
     print("\n目录内容:")
     for p in sorted(OUT.rglob("*")):
         if p.is_file():
             print(f"  {p}  {p.stat().st_size / 1e6:.2f} MB")
+
+    if failed:
+        print("\n[FAIL] 存在未完成/长度不符的下载：请重跑本脚本。"
+              "（旧版本在此情形下仍返回 0，会让调用方误以为数据就绪。）")
+        return 1
     return 0
 
 

@@ -1,5 +1,6 @@
 # 依赖
 # 环境实测：Python 3.12.3 / Windows；以下版本均已验证可用
+# 安装：pip install -r code/requirements.txt
 numpy>=2.0
 pandas>=2.2
 scipy>=1.11
@@ -10,13 +11,6 @@ matplotlib>=3.8
 # 深度学习（CPU 版；如需 GPU 请按官方指引替换为 CUDA 轮子）
 # 安装命令：pip install torch --index-url https://download.pytorch.org/whl/cpu
 torch>=2.4
-
-# 动态模态分解（含 HankelDMD，用于 Koopman 算子的参考实现与交叉验证）
-pydmd>=0.4
-
-# 评分规则（含 twcrps_ensemble，用于交叉验证自实现的 twCRPS）
-# 注意：要求 Python >= 3.12
-scoringrules>=0.11
 
 # 演示看板（Flask + 本地 vendored ECharts；无任何外网 CDN 依赖）
 # 环境实测版本：flask 3.1.2
@@ -29,3 +23,18 @@ xarray>=2024.1
 h5py>=3.10
 h5netcdf>=1.3
 
+# ---------------------------------------------------------------- tools/ 交付链
+# 以下 6 个包供 tools/ 下的材料生成工具使用（不参与算法训练）。
+# 之前漏列，只装上面几条会导致 `python tools/md2pdf.py` / `tools/build_ppt.py`
+# / `tools/make_video.py` 直接 ImportError。
+pymupdf>=1.24        # tools/md2pdf.py（Markdown→PDF Story 排版）
+python-pptx>=1.0     # tools/build_ppt.py（答辩 PPT 生成）
+Pillow>=10.0         # tools/make_video.py（字幕渲染）
+imageio[ffmpeg]>=2.34 # tools/make_video.py（MP4 编码）
+fontTools>=4.50      # tools/check_glyphs.py（缺字形审计）
+Markdown>=3.6        # tools/md2pdf.py（Markdown 解析）
+
+# ---------------------------------------------------------------- 说明
+# 本文件**只列真正被 import 的包**。探索阶段装过的 `pydmd`、`scoringrules`
+# 未在交付代码中被 import（自实现的 twCRPS 与 EDMD 不依赖它们），故不列入——
+# 以免评委按此安装后误以为它们参与计算。

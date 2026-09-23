@@ -15,26 +15,32 @@
 | 模型 | AUC | F1 | 预警检出率 | 平均提前量 | 可部署 |
 |---|---|---|---|---|---|
 | [oracle] Persistence | 0.836 | 0.092 | — | — | ❌ 需窟内实测 |
-| **Operator-direct（本作品）** | **0.860** | **0.127** | **35.1%** | **46.7 h** | ✅ |
+| **Operator-direct（本作品）** | **0.860** | **0.128** | **35.1%** | **46.3 h** | ✅ |
 | FirstOrderTransfer·静态传递（初稿可部署化） | 0.824 | 0.076 | 29.8% | 42.5 h | ✅ |
 | Climatology | 0.734 | 0.002 | — | — | ✅ |
 | FirstOrderTransfer·**递归推演**（初稿原样） | 0.500 | 0.000 | 0.0% | 从不预警 | ✅ |
 | FirstOrderTransfer·**原文无自回归形式** | **0.896** | 0.052 | — | — | ✅ |
 
-- 算子在 **48 h / 72 h 时效上 F1 仍高于 oracle**（0.098 / 0.058 vs 0.064 / 0.043）。
+- 算子在 **48 h / 72 h 时效上 F1 仍高于 oracle**（0.101 / 0.060 vs 0.064 / 0.043）。
 - ⚠️ **初稿传递函数不是"随机猜"**：其原文形式 AUC 0.896 甚至高于本作品，
   问题在于**绝对量级被压缩**（校准阈值落在 48.9%，召回率 0.0375，F1 仅 0.052）；
   只有**递归实现**（极点 a = 1.000920 > 1）才会饱和成常数预报、AUC ≡ 0.4995。
   诚实表述是「抓到了形状、丢掉了量级」。
-- ⚠️ **在"超阈持续时长"上本作品不占优**（条件时长 MAE 5.27 h vs oracle 4.68 h），
+- ⚠️ **在"超阈持续时长"上本作品不占优**（条件时长 MAE 4.79 h vs oracle 4.68 h），
   时长精度必须与命中窗口率联合阅读（`../docs/01_技术路线.md` §6.6）。
 
 ---
 
 ## 快速开始
 
+> **工作目录约定**：本节的命令**全部在 `code/` 目录内执行**
+> （即 `cd code` 之后）。仓库根目录下的命令另行标注 `# 在仓库根目录执行`。
+> 所有脚本内部用 `Path(__file__).resolve().parents[N]` 定位数据，**与 cwd 无关**，
+> 但脚本之间的相对路径习惯不同，照抄本节最稳妥。
+
 ```bash
-pip install -r requirements.txt
+cd code
+pip install -r requirements.txt        # 也可在仓库根执行 pip install -r code/requirements.txt
 
 # 1) 抓取外场数据（NASA POWER 逐小时，2001-2025，约 220k 行）
 python src/data/power.py
@@ -52,13 +58,19 @@ python experiments/exp03_risk_aligned.py
 python experiments/validate_crosscave.py
 python experiments/validate_iccp.py        # 需要先下载 ICCP（见下）
 
-# 6) 演示看板（本地离线，无 CDN 依赖）
+# 6) 外场驱动真实性交叉核对（POWER 再分析 vs NOAA ISD 敦煌站实测）
+#    需要先手动下载 ISD 原始文件到 data/raw/isd/（脚本会打印下载 URL）
+python experiments/check_isd_outdoor.py
+
+# 7) 演示看板（本地离线，无 CDN 依赖）
 python src/web/app.py                      # http://127.0.0.1:5000
 ```
 
 ICCP 真实观测数据的获取（Zenodo 会拦截缺少浏览器特征的请求）：
 
 ```bash
+# 回到仓库根目录执行
+cd ..
 python tools/fetch_iccp.py                 # 已内置请求头与指数退避重试
 ```
 
