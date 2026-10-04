@@ -19,7 +19,8 @@
 方案   训练目标
 ====  ==========================================================
 A     MSE（现有全部工作的做法）
-B     MSE + twCRPS，权重为**固定阈值**（标准 twCRPS）
+B     上尾加权的分位数损失 + 时效衰减，门控为**常数**（风险对齐简化式；
+      不是标准 twCRPS 的逐字实现——详见 code/src/losses/twcrps.py 模块 docstring）
 C     MSE + twCRPS，权重由**输运算子传播的窟内 RH** 驱动（本作品）
 ====  ==========================================================
 
@@ -453,7 +454,7 @@ def main() -> None:
     print("\n[4] 训练 A / B / C 三组 ...")
     models = {}
     for mode, desc in (("A", "MSE（现有做法）"),
-                       ("B", "MSE + 固定阈值 twCRPS"),
+                       ("B", "上尾加权分位数损失 + 时效衰减，常数门控（风险对齐简化式）"),
                        ("C", "MSE + 算子导出内生权重（本作品）")):
         print(f"\n  --- 方案 {mode}：{desc} ---")
         models[mode] = run(mode)
@@ -527,7 +528,7 @@ def main() -> None:
     dv.to_csv(RESULTS / "exp03_verdict.csv", index=False)
 
     # B 相对 A 的增益是另一条独立的判据：风险对齐训练本身有没有用。
-    print("\n  --- 参照：B（固定阈值 twCRPS）相对 A（纯 MSE）---")
+    print("\n  --- 参照：B（上尾加权分位数损失 + 常数门控）相对 A（纯 MSE）---")
     ab_rows = []
     for tag, d in (("val", dfv), ("test", df)):
         for h in (24, 48, 72):
@@ -553,7 +554,7 @@ def main() -> None:
         print("  => 判据未通过：算子导出的内生权重不足以支撑独立创新主张。")
         print("     这不是脚本出错，也不是可以调参修好的东西——请**如实披露**：")
         print("     B 相对 A（纯 MSE）的增益成立，风险对齐训练本身有效；")
-        print("     但把固定阈值换成算子导出的内生权重（C）没有进一步增益。")
+        print("     但把常数门控换成算子导出的内生权重（C）没有进一步增益。")
         print("     报告中不得把 C 当作已验证的创新点。")
 
     (RESULTS / "exp03_config.json").write_text(json.dumps({

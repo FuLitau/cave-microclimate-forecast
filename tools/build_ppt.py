@@ -390,10 +390,10 @@ rect(s, 7.05, 1.45, 5.65, 3.55, LIGHT)
 tf = textbox(s, 7.3, 1.62, 5.15, 3.2)
 para(tf, "内生权重的尝试与结论（如实记录）", size=14, bold=True, color=NAVY,
      first=True, space_after=8)
-para(tf, "我们还尝试过用算子自身导出的「内生权重」替代固定阈值权重（C 组）。"
+para(tf, "我们还尝试过用算子自身导出的「内生权重」替代常数门控（C 组）。"
          "预登记判据要求 C 必须稳定优于 B，才算证明贡献来自「内生」而非"
          "「换了个损失函数」。", size=12, color=DARK, space_after=8, line=1.3)
-para(tf, "结果：验证段与测试段各 1/9（18 组中仅 2 组），判据未通过。", size=12.5,
+para(tf, "结果：18 组中仅 1 组通过（验证段 1/9、测试段 0/9），判据未通过。", size=12.5,
      bold=True, color=RED, space_after=8, line=1.3)
 para(tf, "→ 已降级为「被实验否定的设计」，不再作为创新点主张。", size=12,
      color=DARK, space_after=0, line=1.3)

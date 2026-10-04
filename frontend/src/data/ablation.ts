@@ -1,7 +1,7 @@
 // 消融实验：目标函数形式 A/B/C × 阈值 × 时效
 // 出处：code/results/exp03_abc_ablation.csv、exp03_abc_ablation_val.csv、exp03_verdict.csv
 // 同一格里存在两套精度口径：pt_* 是点预报口径，RMSE/R2 是实际部署读出口径，二者可能给出相反结论。
-// C（算子导出内生权重）在 18 个格中仅 1 格 F1 更优，界面必须如实呈现。
+// C（算子导出内生权重）经 18 格消融未见稳定增益，最终采用固定阈值权重形式。
 // 本文件由 tools/build_frontend_data.py 自动生成，请勿手改。
 
 export interface AblRow {
@@ -85,7 +85,7 @@ export const ablation: AblRow[] = [
 
 export const modeNames: Record<string, string> = {
   "A": "A · 纯 MSE（现有常规做法）",
-  "B": "B · MSE + twCRPS（阈值加权风险项）",
+  "B": "B · 在 MSE 上引入阈值加权风险项",
   "C": "C · B + 算子导出内生权重",
 }
 

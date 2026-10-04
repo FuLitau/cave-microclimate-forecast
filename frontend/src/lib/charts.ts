@@ -52,17 +52,17 @@ export { echarts }
    与设计系统保持一致的图表默认值
    --------------------------------------------------------------------------- */
 
-export const INK = '#ece6da'
-export const INK_2 = '#b3a992'
-export const INK_3 = '#837a68'
-export const INK_4 = '#5f5849'
-export const LINE = '#312b22'
-export const PANEL = '#1b1814'
-export const AZURITE = '#4a90c4'
-export const MALACHITE = '#4f9d8b'
-export const OCHRE = '#d99a3f'
-export const CINNABAR = '#d4553f'
-export const GOLD = '#c9a84c'
+export const INK = '#e8eef8'
+export const INK_2 = '#8ba0bd'
+export const INK_3 = '#6d82a2'
+export const INK_4 = '#5d7191'
+export const LINE = '#1d2a40'
+export const PANEL = '#111a2b'
+export const AZURITE = '#56c2de'
+export const MALACHITE = '#5bc48e'
+export const OCHRE = '#e2a24a'
+export const CINNABAR = '#e0635c'
+export const GOLD = '#f0c084'
 export const VIOLET = '#8b7bb8'
 
 export const FONT =
@@ -77,8 +77,8 @@ export const baseAxis = {
 }
 
 export const baseTooltip = {
-  backgroundColor: 'rgba(22,19,15,0.96)',
-  borderColor: '#453d30',
+  backgroundColor: 'rgba(13,21,35,0.96)',
+  borderColor: '#27395a',
   borderWidth: 1,
   padding: [8, 11] as [number, number],
   textStyle: { color: INK, fontSize: 12, fontFamily: FONT },

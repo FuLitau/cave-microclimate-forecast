@@ -17,7 +17,7 @@ export const kpis: Kpi[] = [
     label: '超阈 F1（端到端）',
     value: '0.072 → 0.164',
     sub: '测试段 · 24 h 时效 · 62% 阈值',
-    hint: '目标函数由纯 MSE 换成 MSE + twCRPS 后的变化；驱动为真实预报',
+    hint: '在 MSE 目标上引入阈值加权风险项后的变化；驱动为真实预报',
     scope: 'end2end',
   },
   {

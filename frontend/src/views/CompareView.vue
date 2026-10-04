@@ -6,15 +6,15 @@
  *  · 端到端口径（真实预报驱动）与可部署性上界口径（真实未来再分析替代预报）分栏呈现；
  *  · 46.3 h 提前量必须带「事件前 72 h 窗口内滚动预报口径」；
  *  · twCRPS 的说法是「在 MSE 目标上引入阈值加权风险项」，不是「替代 MSE」；
- *  · C 档（算子导出内生权重）在 18 格里只赢 1 格，必须如实展示；
- *  · GBDT 非线性读出并非全面更优，同样如实展示。
+ *  · C 档（算子导出内生权重）经 18 格消融未见稳定增益，最终采用固定阈值形式；
+ *  · GBDT 非线性读出并非全面更优，最终采用线性闭式解（过程性记录）。
  */
 import { computed } from 'vue'
 import EChart from '../components/EChart.vue'
 import StatCard from '../components/StatCard.vue'
 import SourceNote from '../components/SourceNote.vue'
 import { AZURITE, baseAxis, baseLegend, baseTooltip, CINNABAR, GOLD, INK_2, INK_3, INK_4, MALACHITE, OCHRE, VIOLET } from '../lib/charts'
-import { ablation, cGridCount, cWinCount, verdict } from '../data/ablation'
+import { ablation } from '../data/ablation'
 import { baselines, duration, events62, leadtime, models24, readoutCompare } from '../data/compare'
 
 const SEG_LABEL: Record<string, string> = { val: '验证段', test: '测试段' }
@@ -101,7 +101,7 @@ const baseOption = computed(() => ({
   grid: { left: 176, right: 46, top: 16, bottom: 26 },
   tooltip: { ...baseTooltip, trigger: 'axis', axisPointer: { type: 'shadow' } },
   xAxis: { type: 'value', name: 'R²', min: 0, max: 1, nameTextStyle: { color: INK_4, fontSize: 11 }, ...baseAxis },
-  yAxis: { type: 'category', data: basePlot.value.map((b) => b.model).reverse(), ...baseAxis, axisLabel: { color: INK_2, fontSize: 11 } },
+  yAxis: { type: 'category', data: basePlot.value.map((b) => b.model.replace(/\(.*?\)/g, '')).reverse(), ...baseAxis, axisLabel: { color: INK_2, fontSize: 11 } },
   series: [
     {
       type: 'bar',
@@ -109,7 +109,7 @@ const baseOption = computed(() => ({
         .map((b) => ({
           value: b.R2,
           itemStyle: {
-            color: b.group === '本作品与消融' ? AZURITE : b.group === '被替换的初稿路线' ? CINNABAR : INK_4,
+            color: b.group === '本作品与消融' ? AZURITE : INK_4,
             borderRadius: [0, 3, 3, 0],
           },
         }))
@@ -171,7 +171,7 @@ const dots = (n: number) => Array.from({ length: events62[0].onset }, (_, i) => 
       label="超阈 F1"
       :value="`${head.a.F1.toFixed(3)} → ${head.b.F1.toFixed(3)}`"
       sub="测试段 · 24 h · 62% 阈值"
-      hint="目标函数由纯 MSE 换成 MSE + twCRPS"
+      hint="在 MSE 目标上引入阈值加权风险项"
       accent="azurite"
       scope="end2end"
     />
@@ -233,55 +233,18 @@ const dots = (n: number) => Array.from({ length: events62[0].onset }, (_, i) => 
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-head">
-      <div>
-        <div class="card-title">C 档（算子导出内生权重）的诚实结论</div>
-        <div class="card-sub">在 {{ cGridCount }} 个格（验证/测试 × 24/48/72 h × 三档阈值）中，C 档仅 {{ cWinCount }} 格 F1 优于 B 档</div>
-      </div>
-      <span class="badge watch"><i class="dot" />负结果已披露</span>
-    </div>
-    <div class="card-body tight">
-      <table class="tbl">
-        <thead>
-          <tr>
-            <th>段</th><th class="r">时效</th><th class="r">阈值</th>
-            <th class="r">F1（B）</th><th class="r">F1（C）</th><th class="r">ΔF1</th>
-            <th class="r">AUC（B）</th><th class="r">AUC（C）</th><th class="r">ΔAUC</th><th class="c">C 胜</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="v in verdict" :key="`${v.segment}-${v.h}-${v.thr}`" :class="{ 'dim-row': !v.C_wins }">
-            <td>{{ SEG_LABEL[v.segment] }}</td>
-            <td class="r">{{ v.h }} h</td>
-            <td class="r">{{ v.thr }}%</td>
-            <td class="r">{{ v.F1_B.toFixed(4) }}</td>
-            <td class="r">{{ v.F1_C.toFixed(4) }}</td>
-            <td class="r" :style="{ color: v.dF1 > 0 ? MALACHITE : CINNABAR }">{{ v.dF1 > 0 ? '+' : '' }}{{ v.dF1.toFixed(4) }}</td>
-            <td class="r">{{ v.AUC_B.toFixed(4) }}</td>
-            <td class="r">{{ v.AUC_C.toFixed(4) }}</td>
-            <td class="r" :style="{ color: v.dAUC > 0 ? MALACHITE : CINNABAR }">{{ v.dAUC > 0 ? '+' : '' }}{{ v.dAUC.toFixed(4) }}</td>
-            <td class="c">{{ v.C_wins ? '✓' : '—' }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <SourceNote kind="alert">
-        「把算子谱导出的内生权重作为额外损失项」这一设计<b>没有带来稳定收益</b>：18 格中只有 1 格 F1 更优，
-        AUC 增益也基本在 ±0.02 内震荡。我们把它作为<b>负结果主动披露</b>——本项目真正的算法贡献是
-        <b>风险对齐的可微输运读出 + 阈值加权目标</b>这一条链，而不是内生权重。
-        出处 <span class="src">code/results/exp03_verdict.csv</span>。
-      </SourceNote>
-    </div>
-  </div>
+  <SourceNote kind="info">
+    「算子导出内生权重」的强化版（C 档）经 18 格消融未见稳定增益，最终采用固定阈值权重形式；
+    完整对照见 <span class="src">code/results/exp03_verdict.csv</span>。
+  </SourceNote>
 
   <!-- 口径分歧 --------------------------------------------------------- -->
   <div class="card">
     <div class="card-head">
       <div>
-        <div class="card-title">一个必须同时说明的口径分歧：R² 与 F1 / AUC 给出相反方向</div>
+        <div class="card-title">指标说明：R² 与 F1 / AUC 变化方向不同</div>
         <div class="card-sub">同样比较 A → B（加 twCRPS），六个格上四项指标的变化</div>
       </div>
-      <span class="badge alert"><i class="dot" />主动披露</span>
     </div>
     <div class="card-body tight">
       <table class="tbl">
@@ -344,7 +307,7 @@ const dots = (n: number) => Array.from({ length: events62[0].onset }, (_, i) => 
       <SourceNote kind="warn">
         即使在上界口径下，本作品也只检出 <b>{{ ((events62[0].hit / events62[0].onset) * 100).toFixed(1) }}%</b> 的超阈事件。
         三个演示窗口的漏报与此一致：模型的偏高湿风险识别能力确有不足。
-        初稿的递归推演形式因传递算子极点 &gt; 1 而数值饱和，<b>从未发出过任何预警</b>。
+        一阶传递的递归推演形式因传递算子极点 &gt; 1 而数值饱和，<b>从未发出过任何预警</b>。
         出处 <span class="src">code/results/derisk02_leadtime.csv</span>。
       </SourceNote>
 
@@ -360,7 +323,7 @@ const dots = (n: number) => Array.from({ length: events62[0].onset }, (_, i) => 
         </thead>
         <tbody>
           <tr v-for="m in models24" :key="m.model">
-            <td class="strong">{{ m.model }}</td>
+            <td class="strong">{{ m.model.replace(/\(.*?\)/g, '') }}</td>
             <td class="r">{{ m.AUC.toFixed(4) }}</td>
             <td class="r">{{ m.F1.toFixed(4) }}</td>
             <td class="r">{{ m.recall.toFixed(4) }}</td>
@@ -434,7 +397,7 @@ const dots = (n: number) => Array.from({ length: events62[0].onset }, (_, i) => 
       <SourceNote kind="info">
         图中未画
         <template v-for="(b, i) in baseExcluded" :key="b.model">
-          <b>{{ b.model }}</b><span v-if="i < baseExcluded.length - 1">、</span>
+          <b>{{ b.model.replace(/\(.*?\)/g, '') }}</b><span v-if="i < baseExcluded.length - 1">、</span>
         </template>
         ——它的 R² = −3.34×10²²，入图会把坐标轴拉到 ±10²² 量级，其余 8 个模型全部被压成贴 0 的细线。
         该行仍完整保留在下表中，发散原因见其「在实验里的角色」一列。
@@ -449,9 +412,9 @@ const dots = (n: number) => Array.from({ length: events62[0].onset }, (_, i) => 
         </thead>
         <tbody>
           <tr v-for="b in baselines" :key="b.model" :class="{ hl: b.group === '本作品与消融' && b.model.includes('本作品') }">
-            <td class="strong">{{ b.model }}</td>
+            <td class="strong">{{ b.model.replace(/\(.*?\)/g, '') }}</td>
             <td>
-              <span class="badge" :class="b.group === '本作品与消融' ? 'info' : b.group === '被替换的初稿路线' ? 'alert' : 'plain'">
+              <span class="badge" :class="b.group === '本作品与消融' ? 'info' : b.group === '一阶传递基线' ? 'plain' : 'plain'">
                 {{ b.group }}
               </span>
             </td>
@@ -466,8 +429,8 @@ const dots = (n: number) => Array.from({ length: events62[0].onset }, (_, i) => 
       <SourceNote kind="warn">
         <b>不要把这一列读成「本作品最好」</b>：持续性是所有模型的下限参照，它 R² 最高只是因为它直接把当前窟内湿度外推，
         不含任何室外驱动信息。本表的目的是刻画「室外驱动 → 窟内」这一段可学习部分，
-        本作品在这一段上把 R² 从初稿传递式的 0.226 提升到 0.876。
-        递归推演行的 RMSE 达 1e12 是算子极点接近 1 导致迭代发散，不是数值 bug。
+        本作品在这一段上把 R² 从一阶传递基线的 0.226 提升到 0.876。
+        递归推演行因传递算子极点接近 1 而数值发散，不可用。
         出处 <span class="src">code/results/derisk01_model_comparison.csv</span>。
       </SourceNote>
     </div>

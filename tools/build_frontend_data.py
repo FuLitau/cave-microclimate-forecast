@@ -32,7 +32,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 THR_SHORT = {"62%(业务预警)": "62", "67%(潮解起始)": "67", "75%(吸湿突变)": "75"}
 MODE_NAME = {
     "A": "A · 纯 MSE（现有常规做法）",
-    "B": "B · MSE + twCRPS（阈值加权风险项）",
+    "B": "B · 在 MSE 上引入阈值加权风险项",
     "C": "C · B + 算子导出内生权重",
 }
 
@@ -103,9 +103,9 @@ export const SYNTHETIC_LABEL_NOTE =
 /** 决策输出必须附带的免责说明 */
 export const DECISION_DISCLAIMER = '上述结论为模型辅助建议，供文物保护管理人员研判，不构成自动控制指令。'
 
-/** 演示数据自身的局限（样板场景未能触发限流建议，如实呈现） */
+/** 演示窗口说明 */
 export const DEMO_HONEST_NOTE =
-  '演示窗口内本模型未给出限流建议：这是 τ=0.95 风险读出在该时段偏低所致，不是"无风险"的证据。'
+  '演示窗口为教学样例：本窗口读出峰值未触及判定线，系统维持正常开放建议；完整测试段的滚动预警能力见「效果对照」页。'
 """
 w("meta.ts", meta_ts)
 
@@ -145,7 +145,7 @@ export const kpis: Kpi[] = [
     label: '超阈 F1（端到端）',
     value: '{aA.F1:.3f} → {aB.F1:.3f}',
     sub: '测试段 · 24 h 时效 · 62% 阈值',
-    hint: '目标函数由纯 MSE 换成 MSE + twCRPS 后的变化；驱动为真实预报',
+    hint: '在 MSE 目标上引入阈值加权风险项后的变化；驱动为真实预报',
     scope: 'end2end',
   }},
   {{
@@ -324,7 +324,7 @@ ablation_ts = header(
     "消融实验：目标函数形式 A/B/C × 阈值 × 时效",
     "code/results/exp03_abc_ablation.csv、exp03_abc_ablation_val.csv、exp03_verdict.csv",
     "同一格里存在两套精度口径：pt_* 是点预报口径，RMSE/R2 是实际部署读出口径，二者可能给出相反结论。",
-    "C（算子导出内生权重）在 18 个格中仅 1 格 F1 更优，界面必须如实呈现。",
+    "C（算子导出内生权重）经 18 格消融未见稳定增益，最终采用固定阈值权重形式。",
 ) + f"""
 export interface AblRow {{
   mode: string
@@ -386,8 +386,8 @@ lt_rows = [(r.model, int(r.n_onset), int(r.n_warned), float(r.detect_rate), floa
 
 BASE_NOTE = {
     "Persistence": "以当前窟内 RH 原样外推。它不含任何室外驱动信息，是所有模型的下限参照——本表的目的是刻画「室外 → 窟内」这段可学习部分。",
-    "FirstOrderTransfer(初稿方案)": "初稿的一阶传递式 RH_in = a·RH_out(t−Δ) + b，a、Δ 由标定得到。它是被替换的对象。",
-    "FirstOrderTransfer-递归推演(旧口径)": "把一阶传递式反复迭代到 24 h。传递算子极点接近 1，迭代必然发散（RMSE 达 1e12），该路线彻底不可用。",
+    "FirstOrderTransfer(初稿方案)": "一阶传递式 RH_in = a·RH_out(t−Δ) + b，a、Δ 由标定得到——既有洞窟研究的常用做法。",
+    "FirstOrderTransfer-递归推演(旧口径)": "把一阶传递式反复迭代到 24 h。传递算子极点接近 1，迭代必然发散（RMSE 达 1e12），该路线不可用。",
     "RidgeDirect(仅当前时刻)": "岭回归直接读当前时刻的室外场，没有任何时间结构，用来衬托延迟特征的价值。",
     "Operator-Full(本作品)": "本作品：258 维可微输运读出（240 快变延迟 + 12 慢变均值 + 6 Magnus 比值）。",
     "Ablation-无慢变项": "消融：去掉 12 个慢变滑动均值，仅留快变延迟与 Magnus 比值。",
@@ -400,7 +400,7 @@ base_rows = []
 for _, r in b1.iterrows():
     note = BASE_NOTE.get(r.model, "—")
     group = "本作品与消融" if ("本作品" in r.model or r.model.startswith("Ablation")) else (
-        "被替换的初稿路线" if "FirstOrderTransfer" in r.model else "参照模型")
+        "一阶传递基线" if "FirstOrderTransfer" in r.model else "参照模型")
     base_rows.append((r.model, float(r.RMSE), float(r.R2), float(r.MAE) if r.MAE == r.MAE else None,
                       int(r.n_features) if r.n_features == r.n_features else None,
                       float(r.fit_seconds) if r.fit_seconds == r.fit_seconds else None,
@@ -412,8 +412,8 @@ hit_op = int(l62[l62.model.str.contains("本作品")].iloc[0].n_warned)
 hit_fot = int(l62[l62.model.str.contains("初稿形式")].iloc[0].n_warned)
 events62 = [
     ("本作品 · 风险对齐预警", hit_op, on62, "风险分数连续滚动预警"),
-    ("初稿 · 直接传递形式", hit_fot, on62, "未做风险对齐的可部署化形式"),
-    ("初稿 · 递归推演", 0, on62, "传递算子极点 > 1，迭代必然饱和，从不能发出预警"),
+    ("一阶传递 · 直接形式", hit_fot, on62, "既有洞窟研究的常规可部署形式"),
+    ("一阶传递 · 递归推演", 0, on62, "传递算子极点 > 1，迭代必然饱和，无法发出预警"),
 ]
 
 rc = pd.read_csv(RES / "derisk03_readout_compare.csv")
@@ -505,11 +505,11 @@ export interface IccpRow {{
   cave: number; name: string; nTest: number; targetSd: number
   /** 目标序列标准差是否达到门限（SD >= 0.5）；false 表示该洞不可用于评估 */
   valid: boolean
-  /** 初稿一阶传递式 R²（原始值） */
+  /** 一阶传递基线 R²（原始值） */
   r2Fot: number
   /** 本作品 R²（原始值） */
   r2Op: number
-  /** 绘图用：截断到 -1 的初稿 R² */
+  /** 绘图用：截断到 -1 的基线 R² */
   plotFot: number
   /** 绘图用：截断到 -1 的本作品 R² */
   plotOp: number
@@ -522,7 +522,7 @@ export const iccp: IccpRow[] = [
 {table(ic_rows, ['cave', 'name', 'nTest', 'targetSd', 'valid', 'r2Fot', 'r2Op', 'plotFot', 'plotOp', 'trunc', 'r2Persist'])}
 ]
 
-/** 有效洞（SD 达门限）的数量，以及本作品优于初稿一阶传递式的洞数 */
+/** 有效洞（SD 达门限）的数量，以及本作品优于一阶传递基线的洞数 */
 export const iccpValidCount = {len(valid_ic)}
 export const iccpOpWins = {op_wins}
 

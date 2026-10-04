@@ -37,7 +37,7 @@ const weightOption = computed(() => ({
     formatter: (ps: any) => {
       const p = ps[0]
       const row = readoutWeights.find((r) => r.feature === p.name)!
-      return `<b>${row.feature}</b><br/>族：${row.family}<br/>岭回归权重 ${row.weight.toFixed(4)}（|·| 排名）<br/><span style="color:#b3a992">${row.desc}</span>`
+      return `<b>${row.feature}</b><br/>族：${row.family}<br/>岭回归权重 ${row.weight.toFixed(4)}（|·| 排名）<br/><span style="color:#8ba0bd">${row.desc}</span>`
     },
   },
   xAxis: { type: 'value', name: '标准化特征上的岭回归权重', nameTextStyle: { color: INK_4, fontSize: 10.5 }, ...baseAxis },
@@ -209,7 +209,10 @@ const FEATURE_MIX = [
         </p>
         <p class="note warn">
           <b>准确的表述</b>：这是在 MSE 目标上<b>引入</b>阈值加权风险项，不是「用 twCRPS 替代 MSE」。
-          消融表里 A 档（纯 MSE）与 B 档（MSE + twCRPS）的差别就来自这一项。
+          消融表里 A 档（纯 MSE）与 B 档的差别就来自这一项。
+          另需说明：B 档去掉算子后门控退化为<b>常数</b>（不含阈值指示项），
+          因此 B 是<b>风险对齐简化式</b>，不是标准 twCRPS 的逐字实现——
+          这样设计是为了让 A→B→C 三级消融只改变「门控来源」这一个变量。
           实现见 <span class="src">code/src/losses/twcrps.py</span>，其中 <span class="src">twcrps_integral()</span>
           是按定义数值积分的参考实现，用于校验向量化版本的数值正确性。
         </p>

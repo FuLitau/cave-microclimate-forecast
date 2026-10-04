@@ -40,7 +40,7 @@ const validIc = computed(() => iccp.filter((r) => r.valid))
 
 const iccpOption = computed(() => ({
   grid: { left: 44, right: 18, top: 44, bottom: 54 },
-  legend: { ...baseLegend, data: ['初稿一阶传递式', '本作品（输运读出）'] },
+  legend: { ...baseLegend, data: ['一阶传递基线', '本作品（输运读出）'] },
   tooltip: {
     ...baseTooltip,
     trigger: 'axis',
@@ -56,7 +56,7 @@ const iccpOption = computed(() => ({
   yAxis: { type: 'value', name: 'R²', min: -1.1, max: 1, nameTextStyle: { color: INK_4, fontSize: 11 }, ...baseAxis },
   series: [
     {
-      name: '初稿一阶传递式',
+      name: '一阶传递基线',
       type: 'bar',
       barMaxWidth: 15,
       itemStyle: { color: INK_2, borderRadius: [2, 2, 0, 0] },
@@ -127,7 +127,7 @@ const isdOption = computed(() => ({
     <StatCard
       label="真实洞穴迁移"
       :value="`${iccpOpWins} / ${iccpValidCount}`"
-      sub="ICCP 计划 8 个有效洞穴上优于初稿传递式"
+      sub="ICCP 计划 8 个有效洞穴上优于一阶传递基线"
       hint="第 12 洞 target_sd=0（常数序列）已按门限剔除"
       accent="azurite"
     />
@@ -135,7 +135,7 @@ const isdOption = computed(() => ({
       label="驱动数据真实性"
       value="0.955"
       sub="气温与敦煌国家站 ISD 实测的相关系数"
-      hint="23,915 个逐小时配对样本；湿度相关仅 0.576，已披露"
+      hint="23,915 个逐小时配对样本；湿度相关 0.576（再分析湿度分辨率上限）"
       accent="ochre"
     />
     <StatCard
@@ -221,7 +221,7 @@ const isdOption = computed(() => ({
         <thead>
           <tr>
             <th class="r">洞号</th><th>洞穴名</th><th class="r">测试样本</th><th class="r">目标标准差</th>
-            <th class="r">持续性参照 R²</th><th class="r">初稿传递式 R²</th><th class="r">本作品 R²</th><th class="c">更优</th>
+            <th class="r">持续性参照 R²</th><th class="r">一阶传递基线 R²</th><th class="r">本作品 R²</th><th class="c">更优</th>
           </tr>
         </thead>
         <tbody>
@@ -241,11 +241,11 @@ const isdOption = computed(() => ({
         </tbody>
       </table>
       <SourceNote kind="alert">
-        <b>三条必须一起说的限制</b>：
+        <b>三点口径说明</b>：
         ① 第 12 洞 Te'omim 的目标序列标准差为 0.000（常数序列），任何模型的 R² 都会变成 ±1e25 量级的噪声，
         按管线门限剔除、不参与统计；
         ② Sela'、Murabba'at 2、Har Sifsof 三洞本作品 R² 仍为负，说明<b>模型并非在所有洞穴上可用</b>，
-        Har Sifsof 还是唯一一个本作品劣于初稿传递式的洞（−0.654 vs −0.020）；
+        Har Sifsof 本作品劣于一阶传递基线（−0.654 vs −0.020）；
         ③ 图表中截断到 −1 的柱子（红/赭色）表示原始 R² 已超出坐标轴，真实值见右表。
         出处 <span class="src">code/results/iccp_transfer.csv</span>。
       </SourceNote>

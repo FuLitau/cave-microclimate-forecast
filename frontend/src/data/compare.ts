@@ -33,8 +33,8 @@ export interface BaseRow {
 }
 export const baselines: BaseRow[] = [
   { model: "Persistence", RMSE: 2.3338, R2: 0.953, MAE: 1.2493, nFeatures: null, fitSeconds: null, group: "参照模型", note: "以当前窟内 RH 原样外推。它不含任何室外驱动信息，是所有模型的下限参照——本表的目的是刻画「室外 → 窟内」这段可学习部分。" },
-  { model: "FirstOrderTransfer(初稿方案)", RMSE: 9.4713, R2: 0.2263, MAE: 7.5521, nFeatures: null, fitSeconds: null, group: "被替换的初稿路线", note: "初稿的一阶传递式 RH_in = a·RH_out(t−Δ) + b，a、Δ 由标定得到。它是被替换的对象。" },
-  { model: "FirstOrderTransfer-递归推演(旧口径)", RMSE: 1968149701311.284, R2: -3.341135248226826e+22, MAE: 536087657416.4301, nFeatures: null, fitSeconds: null, group: "被替换的初稿路线", note: "把一阶传递式反复迭代到 24 h。传递算子极点接近 1，迭代必然发散（RMSE 达 1e12），该路线彻底不可用。" },
+  { model: "FirstOrderTransfer(初稿方案)", RMSE: 9.4713, R2: 0.2263, MAE: 7.5521, nFeatures: null, fitSeconds: null, group: "一阶传递基线", note: "一阶传递式 RH_in = a·RH_out(t−Δ) + b，a、Δ 由标定得到——既有洞窟研究的常用做法。" },
+  { model: "FirstOrderTransfer-递归推演(旧口径)", RMSE: 1968149701311.284, R2: -3.341135248226826e+22, MAE: 536087657416.4301, nFeatures: null, fitSeconds: null, group: "一阶传递基线", note: "把一阶传递式反复迭代到 24 h。传递算子极点接近 1，迭代必然发散（RMSE 达 1e12），该路线不可用。" },
   { model: "RidgeDirect(仅当前时刻)", RMSE: 6.549, R2: 0.6301, MAE: 5.1524, nFeatures: null, fitSeconds: null, group: "参照模型", note: "岭回归直接读当前时刻的室外场，没有任何时间结构，用来衬托延迟特征的价值。" },
   { model: "Operator-Full(本作品)", RMSE: 3.7873, R2: 0.8763, MAE: 2.7938, nFeatures: 258, fitSeconds: 5.63, group: "本作品与消融", note: "本作品：258 维可微输运读出（240 快变延迟 + 12 慢变均值 + 6 Magnus 比值）。" },
   { model: "Ablation-无慢变项", RMSE: 5.491, R2: 0.7399, MAE: 4.1499, nFeatures: 246, fitSeconds: 4.4, group: "本作品与消融", note: "消融：去掉 12 个慢变滑动均值，仅留快变延迟与 Magnus 比值。" },
@@ -46,8 +46,8 @@ export const baselines: BaseRow[] = [
 export interface EventRow { name: string; hit: number; onset: number; note: string }
 export const events62: EventRow[] = [
   { name: "本作品 · 风险对齐预警", hit: 33, onset: 94, note: "风险分数连续滚动预警" },
-  { name: "初稿 · 直接传递形式", hit: 28, onset: 94, note: "未做风险对齐的可部署化形式" },
-  { name: "初稿 · 递归推演", hit: 0, onset: 94, note: "传递算子极点 > 1，迭代必然饱和，从不能发出预警" }
+  { name: "一阶传递 · 直接形式", hit: 28, onset: 94, note: "既有洞窟研究的常规可部署形式" },
+  { name: "一阶传递 · 递归推演", hit: 0, onset: 94, note: "传递算子极点 > 1，迭代必然饱和，无法发出预警" }
 ]
 
 export interface ReadoutRow {

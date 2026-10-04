@@ -16,10 +16,21 @@
 |---|---|---|---|---|---|
 | [oracle] Persistence | 0.836 | 0.092 | — | — | ❌ 需窟内实测 |
 | **Operator-direct（本作品）** | **0.860** | **0.128** | **35.1%** | **46.3 h** | ✅ |
-| FirstOrderTransfer·静态传递（初稿可部署化） | 0.824 | 0.076 | 29.8% | 42.5 h | ✅ |
+| FirstOrderTransfer·静态传递（初稿可部署化） | 0.824 | 0.076 | 29.8% | 42.5 h | ⚠️ 半可部署（需起点窟内实测锚定） |
 | Climatology | 0.734 | 0.002 | — | — | ✅ |
-| FirstOrderTransfer·**递归推演**（初稿原样） | 0.500 | 0.000 | 0.0% | 从不预警 | ✅ |
+| FirstOrderTransfer·**递归推演**（初稿原样） | 0.500 | 0.000 | 0.0% | 从不预警 | ⚠️ 半可部署（需起点窟内实测） |
 | FirstOrderTransfer·**原文无自回归形式** | **0.896** | 0.052 | — | — | ✅ |
+
+> **口径提示**：本表 `AUC` / `F1` 为 24 h 时效、62% 单阈口径；
+> **`预警检出率 35.1%` 与 `平均提前量 46.3 h` 是「事件前 72 h 窗口内滚动预报口径」**
+> （94 次真实超阈起报事件中 33 次被提前报出），不是 24 h 单次预报的检出率（该口径为 14.8%）。
+> 出处：`code/results/derisk02_events.csv`、`derisk02_leadtime.csv`。
+
+> **「半可部署」的含义**：`FirstOrderTransfer` 的两种非递归形式都含自回归项，
+> 实现上是 `ŷ(t+h) = a·y(t) + b·x(t+h−τ) + c`，**需要预报起点的窟内实测 RH 作为锚**。
+> 在本项目「窟内无传感器链路」的前提下，它只在已有监测的洞窟可用，故不能整体算作可部署。
+> 本作品算子读出则完全由外场驱动、不需要任何窟内输入。
+> 不占便宜地说：**该基线拿到了额外信息（起点真值）仍然输**，方向上是保守的。
 
 - 算子在 **48 h / 72 h 时效上 F1 仍高于 oracle**（0.101 / 0.060 vs 0.064 / 0.043）。
 - ⚠️ **初稿传递函数不是"随机猜"**：其原文形式 AUC 0.896 甚至高于本作品，
@@ -204,7 +215,7 @@ POWER 再分析窟外年均 10.32 °C 与现场站 11.7 °C 本身相差 1.38 K�
 - Zhao et al. (2026), *Single-sided natural ventilation in deep caves*, npj Heritage Science.
   DOI 10.1038/s40494-026-02955-0
 - Zhang & Wang (2023), *Maintenance schedule optimization ... Cave 87*, Heritage Science 11:158.
-  DOI 10.1038/s40494-023-01005-3
+  DOI 10.1186/s40494-023-01005-3
 - Demas et al. (2015), *Strategies for Sustainable Tourism at the Mogao Grottoes*,
   Springer. DOI 10.1007/978-3-319-09000-9
 - 敦煌研究院官方业务阈值 62% RH / 1500 ppm CO₂（樊锦诗 2013、郭青林 2026、汪万福公开表述）

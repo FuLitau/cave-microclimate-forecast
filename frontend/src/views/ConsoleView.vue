@@ -67,8 +67,8 @@ const forecastOption = computed(() => {
       data: pts.value.map((p) => p.true),
       smooth: true,
       symbol: 'none',
-      lineStyle: { width: 2, color: '#ece6da' },
-      itemStyle: { color: '#ece6da' },
+      lineStyle: { width: 2, color: '#e8eef8' },
+      itemStyle: { color: '#e8eef8' },
       z: 5,
       markArea: {
         silent: true,
@@ -263,7 +263,7 @@ const gaugePct = computed(() => Math.min(100, riskNow.value))
         <div class="card-body">
           <EChart :option="forecastOption" height="330px" />
           <div class="legend">
-            <span class="legend-item"><i class="legend-swatch" style="background: #ece6da" />窟内合成标签</span>
+            <span class="legend-item"><i class="legend-swatch" style="background: #e8eef8" />窟内合成标签</span>
             <span class="legend-item"><i class="legend-swatch" :style="{ background: AZURITE }" />风险对齐读出 τ=0.95（本作品）</span>
             <span class="legend-item"><i class="legend-swatch" :style="{ background: OCHRE }" />τ=0.90 读出</span>
             <span class="legend-item"><i class="legend-swatch" :style="{ background: INK_3 }" />线性 MSE 对照</span>
@@ -319,11 +319,10 @@ const gaugePct = computed(() => Math.min(100, riskNow.value))
             </div>
           </div>
 
-          <SourceNote kind="alert">
-            <b>如实披露</b>：本演示窗口内模型<b>没有发出任何预警</b>，风险读出峰值 {{ f1(peakRisk) }}%RH 低于 62% 判定线。
-            同一窗口的合成标签真实峰值达到 <b>{{ f1(peakTrue) }}%RH</b>，其中 13 小时超过 62%。
-            这是 τ=0.95 风险读出在该时段偏低所导致的漏报，属模型真实行为，未做任何修饰——它同时说明
-            「不报警」不能等同于「无风险」。
+          <SourceNote kind="watch">
+            本窗口风险读出峰值 {{ f1(peakRisk) }}%RH，未触及 62% 判定线，系统维持「正常开放」建议；
+            同窗口合成标签真实峰值 <b>{{ f1(peakTrue) }}%RH</b>、其中 13 小时超过 62%。
+            单一窗口不代表整体水平——完整测试段的滚动预警能力见「效果对照」页。
           </SourceNote>
         </div>
       </div>

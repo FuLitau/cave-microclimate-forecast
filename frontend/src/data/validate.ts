@@ -8,11 +8,11 @@ export interface IccpRow {
   cave: number; name: string; nTest: number; targetSd: number
   /** 目标序列标准差是否达到门限（SD >= 0.5）；false 表示该洞不可用于评估 */
   valid: boolean
-  /** 初稿一阶传递式 R²（原始值） */
+  /** 一阶传递基线 R²（原始值） */
   r2Fot: number
   /** 本作品 R²（原始值） */
   r2Op: number
-  /** 绘图用：截断到 -1 的初稿 R² */
+  /** 绘图用：截断到 -1 的基线 R² */
   plotFot: number
   /** 绘图用：截断到 -1 的本作品 R² */
   plotOp: number
@@ -33,7 +33,7 @@ export const iccp: IccpRow[] = [
   { cave: 12, name: "Te'omim", nTest: 1637, targetSd: 0.0, valid: false, r2Fot: -4.268798537110131e+25, r2Op: -1.27034332408284e+26, plotFot: -1.0, plotOp: -1.0, trunc: true, r2Persist: -3.938382815522068e+30 }
 ]
 
-/** 有效洞（SD 达门限）的数量，以及本作品优于初稿一阶传递式的洞数 */
+/** 有效洞（SD 达门限）的数量，以及本作品优于一阶传递基线的洞数 */
 export const iccpValidCount = 8
 export const iccpOpWins = 7
 

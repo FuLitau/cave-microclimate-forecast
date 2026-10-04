@@ -40,7 +40,7 @@ RESULTS.mkdir(exist_ok=True)
 
 
 #: 第 87 窟实测统计量 —— **标定第 71 窟时完全未使用**
-#: 出处：Zhang & Wang (2023), Heritage Science 11:158, DOI 10.1038/s40494-023-01005-3
+#: 出处：Zhang & Wang (2023), Heritage Science 11:158, DOI 10.1186/s40494-023-01005-3
 CAVE87_TARGETS = {
     "outdoor_monthly_T_range": (-5.1, 26.9, "窟外月均温范围 (degC)"),
     "indoor_monthly_T_range": (3.0, 20.3, "窟内月均温范围 (degC)"),

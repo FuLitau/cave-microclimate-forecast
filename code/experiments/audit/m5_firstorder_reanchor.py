@@ -21,7 +21,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-CODE = Path(r"F:\Desktop\ai气象大赛\code")
+# 本文件位于 code/experiments/audit/，故 parents[2] 即 code/ 目录。
+# 不从绝对路径推断：随 zip 分发后异机路径必然不同。
+CODE = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(CODE))
 
 _spec = importlib.util.spec_from_file_location(
