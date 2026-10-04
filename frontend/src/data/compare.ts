@@ -31,3 +31,11 @@ export const baselines: BaseRow[] = [
   { model: "Ablation-仅快变延迟", RMSE: 5.654, R2: 0.7243 },
   { model: "Ablation-短延迟(12h)", RMSE: 3.891, R2: 0.8694 }
 ]
+
+// 94 次真实超阈起报事件的命中数（24h / 62% 档，出处 code/results/derisk02_leadtime.csv）
+export interface EventRow { name: string; hit: number; onset: number; note: string }
+export const events62: EventRow[] = [
+  { name: '本作品 · 风险对齐预警', hit: 33, onset: 94, note: '风险分数滚动预警' },
+  { name: '初稿 · 直接传递形式', hit: 28, onset: 94, note: '未做风险对齐的可部署化形式' },
+  { name: '初稿 · 递归推演', hit: 0, onset: 94, note: '极点 > 1 必然饱和，从不能发出预警' },
+]

@@ -79,8 +79,8 @@ parts = []
 for scen, g in demo.groupby("scenario", sort=False):
     g = g.sort_values("step_h")
     pts = ",\n".join(
-        "    {{ t: {t!r}, rhOut: {o:.2f}, true: {tr:.2f}, p50: {p:.2f}, p90: {p9:.2f}, advice: {adv}, cut62: {c62:.2f}, cut67: {c67:.2f}, cut75: {c75:.2f} }}".format(
-            t=r.time, o=r.RH_out, tr=r.RH_true, p=r.RH_pred, p9=r.RH_pred_tau90,
+        "    {{ t: {t!r}, rhOut: {o:.2f}, true: {tr:.2f}, p50: {p:.2f}, p90: {p9:.2f}, lin: {l:.2f}, advice: {adv}, cut62: {c62:.2f}, cut67: {c67:.2f}, cut75: {c75:.2f} }}".format(
+            t=r.time, o=r.RH_out, tr=r.RH_true, p=r.RH_pred, p9=r.RH_pred_tau90, l=r.RH_pred_lin,
             adv=json.dumps(r.advice_raw, ensure_ascii=False), c62=r.cut_62, c67=r.cut_67, c75=r.cut_75,
         )
         for r in g.itertuples()
@@ -88,8 +88,8 @@ for scen, g in demo.groupby("scenario", sort=False):
     parts.append(f"  {{\n    name: {json.dumps(scen, ensure_ascii=False)},\n    points: [\n{pts}\n    ]\n  }}")
 demo_ts = (
     "// 演示场景：文献标定物理模型生成的窟内序列 + 算子预报（τ=0.95 分位数读出）\n"
-    "// 出处 code/results/demo_forecast.csv\n"
-    "export interface DemoPoint { t: string; rhOut: number; true: number; p50: number; p90: number; advice: string; cut62: number; cut67: number; cut75: number }\n"
+    "// lin = 未做风险对齐的 MSE 线性读出（同驱动对照），出处 code/results/demo_forecast.csv\n"
+    "export interface DemoPoint { t: string; rhOut: number; true: number; p50: number; p90: number; lin: number; advice: string; cut62: number; cut67: number; cut75: number }\n"
     "export interface DemoScenario { name: string; points: DemoPoint[] }\n"
     "export const scenarios: DemoScenario[] = [\n" + ",\n".join(parts) + "\n]\n"
 )
@@ -160,6 +160,21 @@ base_rows = ",\n".join(
         json.dumps(r.model, ensure_ascii=False), r.RMSE, r.R2)
     for r in b1.itertuples()
 )
+
+# 94 次超阈事件命中点阵（24h / 62% 档；递归形式从不在 derisk02 表中产生报警行，检出率 0.0% 见 docs/03 §5.9）
+l62 = lead[(lead.horizon_h == 24) & (lead.threshold == "62%(业务预警)")]
+on62 = int(l62[l62.model.str.contains("本作品")].iloc[0].n_onset)
+hit_op = int(l62[l62.model.str.contains("本作品")].iloc[0].n_warned)
+hit_fot = int(l62[l62.model.str.contains("初稿形式")].iloc[0].n_warned)
+events62_ts = (
+    "\n// 94 次真实超阈起报事件的命中数（24h / 62% 档，出处 code/results/derisk02_leadtime.csv）\n"
+    "export interface EventRow { name: string; hit: number; onset: number; note: string }\n"
+    "export const events62: EventRow[] = [\n"
+    f"  {{ name: '本作品 · 风险对齐预警', hit: {hit_op}, onset: {on62}, note: '风险分数滚动预警' }},\n"
+    f"  {{ name: '初稿 · 直接传递形式', hit: {hit_fot}, onset: {on62}, note: '未做风险对齐的可部署化形式' }},\n"
+    f"  {{ name: '初稿 · 递归推演', hit: 0, onset: {on62}, note: '极点 > 1 必然饱和，从不能发出预警' }},\n"
+    "]\n"
+)
 cmp_ts = (
     "// 多模型对比（24h / 62% 档，出处 code/results/derisk02_events.csv、derisk02_leadtime.csv、derisk01_model_comparison.csv）\n"
     "export interface CmpRow { model: string; AUC: number; F1: number; recall: number; precision: number }\n"
@@ -168,6 +183,7 @@ cmp_ts = (
     "export const leadtime: LeadRow[] = [\n" + lt_rows + "\n]\n"
     "export interface BaseRow { model: string; RMSE: number; R2: number }\n"
     "export const baselines: BaseRow[] = [\n" + base_rows + "\n]\n"
+    + events62_ts
 )
 w("compare.ts", cmp_ts)
 
