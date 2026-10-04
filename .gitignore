@@ -69,6 +69,8 @@ gpt评估.txt
 
 # ---------------------------------------------------------------- 前端
 node_modules/
+# 目视核验截图与临时 Chrome profile（由 tools/shoot_frontend.mjs 生成）
+_shots/
 ICCP_data.zip
 # 注意：2026AIC-石窟天盾.docx 是技术报告主文档，用户明确认可入库做版本记录，
 # 因此它虽匹配下面的规则但已被跟踪（gitignore 对已跟踪文件无效），属有意为之。
