@@ -127,13 +127,13 @@ code/
   experiments/                  14 个实验脚本（标定 / 解风险 / 风险对齐 / 外部效度）
   results/                      全部实验的落盘结果（CSV / JSON，可审计）
   smoke_cave.py                 物理模型断言式自检
-frontend/                       Vue3 + TypeScript 演示控制台（风险总览 / 预报看板 /
-                                模型对比 / 算法说明，数据由 tools/build_frontend_data.py
+frontend/                       Vue3 + TypeScript 演示控制台（风险指挥台 / 效果对照 /
+                                可信度验证 / 方法说明，数据由 tools/build_frontend_data.py
                                 从 code/results 的 CSV 硬编码生成，纯静态离线可用）
 docs/
   01_技术路线.md   02_数据集方案.md   03_作品方案.md   06_佐证材料.md
   research/                     文献调研、数据方案与参数提取笔记（支撑材料）
-tools/                          文档渲染、PPT/视频生成、内容与版式校验
+tools/                          文档渲染、PPT/视频生成、前端截图核验、内容与版式校验
 2026AIC-石窟天盾.docx            技术报告主文档
 ```
 
@@ -142,6 +142,8 @@ tools/                          文档渲染、PPT/视频生成、内容与版�
 ```bash
 python tools/build_frontend_data.py     # code/results/*.csv → frontend/src/data/*.ts
 cd frontend && npm install && npm run build
+python -m http.server 4173 --directory frontend/dist    # 离线演示用任意静态服务器
+node tools/shoot_frontend.mjs --base http://127.0.0.1:4173 --out _shots   # 目视核验
 ```
 
 ---
