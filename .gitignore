@@ -71,7 +71,12 @@ gpt评估.txt
 node_modules/
 # 目视核验截图与临时 Chrome profile（由 tools/shoot_frontend.mjs 生成）
 _shots/
+_shots_v2/
 ICCP_data.zip
+
+# ---------------------------------------------------------------- 可重跑再生的大文件（不入库）
+# 预警触发窗口脚本的 73×3 组读出权重缓存（486 KB，重跑约 12 分钟即可再生）
+code/results/demo_alarm_weights.npz
 # 注意：2026AIC-石窟天盾.docx 是技术报告主文档，用户明确认可入库做版本记录，
 # 因此它虽匹配下面的规则但已被跟踪（gitignore 对已跟踪文件无效），属有意为之。
 2026AIC-*.docx

@@ -1,0 +1,19 @@
+{
+  "scenario": "预警触发窗口",
+  "origin": "2022-05-25 09:00:00+00:00",
+  "readout": "分位数 τ=0.95",
+  "pred_peak": 64.265,
+  "pred_peak_lin": 50.293,
+  "pred_peak_tau90": 60.472,
+  "true_peak": 75.779,
+  "level_max": 1,
+  "level_raw_max": 1,
+  "n_warn_h": 39,
+  "first_warn_h": 6,
+  "first_true_over_h": 30,
+  "advice_set": [
+    "正常开放",
+    "限流（控制人数与停留时长）"
+  ],
+  "n_true_over_h": 17
+}
