@@ -10,10 +10,12 @@
     README.md        仓库首页（问题 / 方法 / 结果 / 诚信声明）
     code/            全部源码、实验脚本与落盘结果（含数据，便于离线复现）
     docs/            作品方案与佐证材料的 Markdown 源文件
+    frontend/        Vue3 + TypeScript 演示控制台源码（构建产物与依赖不入包）
     tools/           文档渲染、PPT/视频生成、内容与版式校验脚本
 
-刻意排除：``__pycache__``、``*.pyc``、``dist/``（避免自包含）、``_ref/``/``_lit/``
-（第三方获奖报告，版权不属于本项目，不得再分发）、团队内部工作文档。
+刻意排除：``__pycache__``、``*.pyc``、``node_modules/``、``frontend/dist/``、
+``dist/``（避免自包含）、``_ref/``/``_lit/``（第三方获奖报告，版权不属于本项目，
+不得再分发）、团队内部工作文档。
 
 打包后会**校验** zip 内的 ``code/smoke_cave.py`` 是否与工作区一致，
 防止再次把过期文件打进去（历史上发生过一次）。
@@ -42,6 +44,7 @@ DELIVERABLES = [
 # 目录型内容：(工作区目录, zip 内前缀)
 TREES = [
     ("code", "code"),
+    ("frontend", "frontend"),
     ("tools", "tools"),
 ]
 
@@ -51,7 +54,7 @@ ROOT_FILES = ["README.md"]
 # docs/ 里只放提交相关的正文源文件；内部工作文档不进包
 DOC_FILES = ["01_技术路线.md", "02_数据集方案.md", "03_作品方案.md", "06_佐证材料.md"]
 
-EXCLUDE_DIRS = {"__pycache__", ".pytest_cache", ".git"}
+EXCLUDE_DIRS = {"__pycache__", ".pytest_cache", ".git", "node_modules", "dist"}
 EXCLUDE_SUFFIXES = {".pyc", ".pyo"}
 
 

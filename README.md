@@ -123,13 +123,25 @@ code/
   src/physics/cave_model.py     窟内热湿耦合物理模型（矩阵指数精确离散化）
   src/losses/twcrps.py          阈值加权评分规则与三级决策
   src/data/power.py             NASA POWER 数据获取与清洗
-  src/web/                      Flask 本地看板（前端只展示、不算数）
+  src/web/                      Flask 本地看板（后端版，已被 frontend/ 取代）
   experiments/                  14 个实验脚本（标定 / 解风险 / 风险对齐 / 外部效度）
   results/                      全部实验的落盘结果（CSV / JSON，可审计）
   smoke_cave.py                 物理模型断言式自检
+frontend/                       Vue3 + TypeScript 演示控制台（风险总览 / 预报看板 /
+                                模型对比 / 算法说明，数据由 tools/build_frontend_data.py
+                                从 code/results 的 CSV 硬编码生成，纯静态离线可用）
 docs/
   01_技术路线.md   02_数据集方案.md   03_作品方案.md   06_佐证材料.md
+  research/                     文献调研、数据方案与参数提取笔记（支撑材料）
 tools/                          文档渲染、PPT/视频生成、内容与版式校验
+2026AIC-石窟天盾.docx            技术报告主文档
+```
+
+前端运行（Node 20+）：
+
+```bash
+python tools/build_frontend_data.py     # code/results/*.csv → frontend/src/data/*.ts
+cd frontend && npm install && npm run build
 ```
 
 ---
