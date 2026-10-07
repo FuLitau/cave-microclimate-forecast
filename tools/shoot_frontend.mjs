@@ -14,6 +14,8 @@
  *   --width  视口宽度（默认 1600）
  *   --height 初始视口高度（默认 1200）；若主内容区更高会自动加高后重截
  *   --routes 逗号分隔的路由（默认 /,/compare,/validation,/method）
+ *   --page   单文件页面的文件名（如 /演示.html）；给了它就直接 file:// 打开该文件，
+ *            首页路由不再补尾斜杠。用于核验「双击即可打开」的离线单文件产物。
  *   --port   DevTools 调试端口（默认 9333）
  *   --chrome Chrome 可执行文件路径
  *
@@ -38,6 +40,12 @@ const PORT = Number(opt('port', '9333'))
 // 否则静态服务器会把 /compare 当成真实路径返回 404。
 const ROUTES = opt('routes', '/,/#/compare,/#/validation,/#/method').split(',').map((s) => s.trim()).filter(Boolean)
 const CHROME = opt('chrome', 'C:/Program Files/Google/Chrome/Application/chrome.exe')
+// 单文件页面（如「双击打开」的离线 HTML）：BASE 是所在目录，PAGE 是文件名。
+// 这种页面不能给首页路由补尾斜杠——补了会变成目录 URL，Chrome 直接 ERR_FILE_NOT_FOUND；
+// 非首页路由也必须去掉开头的 `/`，否则会变成 `xxx.html/#/compare` 这种带多余斜杠的 URL。
+const PAGE = opt('page', '')
+const urlOf = (route) =>
+  PAGE ? BASE + PAGE + (route === '/' ? '' : route.replace(/^\//, '')) : BASE + route
 const PROFILE = join(OUT, '_chrome_profile')
 
 mkdirSync(OUT, { recursive: true })
@@ -171,7 +179,7 @@ try {
         { width: WIDTH, height, deviceScaleFactor: 1, mobile: false }, sessionId)
 
     await setViewport(HEIGHT)
-    await cdp.send('Page.navigate', { url: BASE + route }, sessionId)
+    await cdp.send('Page.navigate', { url: urlOf(route) }, sessionId)
     await sleep(3500) // 给 ECharts 画布与字体留出渲染时间
 
     // 本应用是固定 100vh 的外壳 + 主内容区内部滚动，所以文档高度恒等于视口高度。
