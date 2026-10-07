@@ -72,6 +72,9 @@ node_modules/
 # 目视核验截图与临时 Chrome profile（由 tools/shoot_frontend.mjs 生成）
 _shots/
 _shots_v2/
+_shots_file/
+# 离线单文件打包的中间产物（由 tools/pack_frontend_offline.py 生成）
+_pack_tmp/
 ICCP_data.zip
 
 # ---------------------------------------------------------------- 可重跑再生的大文件（不入库）
