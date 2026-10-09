@@ -98,10 +98,27 @@ def weighted_quantile_loss(
     taus: torch.Tensor,
     weights: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """加权分位数损失 —— 训练时使用的 twCRPS 等价形式。
+    """加权分位数损失 —— 风险对齐训练实际使用的目标函数。
 
     CRPS 可写成所有分位数损失在 :math:`\\tau \\in (0,1)` 上的二倍积分；
-    用 :math:`K` 个分位点离散化即得。加权版本对应阈值加权的 twCRPS。
+    用 :math:`K` 个分位点离散化即得。**无权重时这个恒等式已数值验证**：
+    ``code/experiments/check_twcrps_consistency.py`` 的 T1 显示
+    :math:`K=1999` 时与正态 CRPS 解析解的相对偏差为 :math:`2.2\\times10^{-5}`。
+
+    .. warning::
+       **加权版本不等于标准 twCRPS —— 本仓库已实测证伪，不得再写成「twCRPS 等价形式」。**
+
+       Gneiting & Ranjan (2011) 的 twCRPS 是**值域加权**：
+       :math:`\\int (F(z)-\\mathbb{1}\\{z\\ge y\\})^2 v(z)\\,dz`；
+       而本函数实现的是**分位数层加权**：:math:`2\\sum_k w_k \\rho_{\\tau_k}(y,q_k)`。
+       对 :math:`v(z)=\\mathbb{1}\\{z\\ge r\\}` 这类阈值指示权重，
+       同一脚本 T2 在三个算例上测得两者相差 **40.9%~213.6%**，且随 K 增大不收敛。
+
+       因此本函数的正确表述是「**分位数层加权的 CRPS（风险对齐分位数损失）**」——
+       它仍是合法的加权评分规则，但**不是** twCRPS 本身。
+       twCRPS 在本仓库中的角色是**动机来源**与**评价侧参考实现**
+       （:func:`twcrps_integral`，已与上游 ``scoringrules.twcrps_ensemble``
+       及解析解三方对拍通过），**不是**训练目标。
 
     Parameters
     ----------

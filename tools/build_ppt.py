@@ -383,8 +383,12 @@ para(tf, "twCRPS（threshold-weighted CRPS）用核函数 φ 把评分集中到�
          "在「业务关心」的超阈区间犯的错被加权。", size=12.5, color=DARK,
      space_after=8, line=1.32)
 para(tf, "实现：自研加权分位数损失（pinball + IRLS，保持闭式解体系），"
-         "并以按定义数值积分的 twCRPS 作参考实现对拍。", size=12.5, color=DARK,
-     space_after=10, line=1.32)
+         "并以按定义数值积分的 twCRPS 作参考实现对拍——无权重时与 CRPS 解析解"
+         "相对偏差 2.2e-5；参考实现与上游 scoringrules 及解析解三方一致。",
+     size=12.5, color=DARK, space_after=6, line=1.32)
+para(tf, "如实说明：值域加权与分位数层加权不是同一泛函（实测相差 40.9%~213.6%），"
+         "故一律表述为「分位数层加权的 CRPS」。", size=11, color=GREY,
+     space_after=10, line=1.3)
 para(tf, "★ 核心创新层级：模型级", size=12, bold=True, color=RED, space_after=0)
 rect(s, 7.05, 1.45, 5.65, 3.55, LIGHT)
 tf = textbox(s, 7.3, 1.62, 5.15, 3.2)
