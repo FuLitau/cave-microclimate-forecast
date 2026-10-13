@@ -1,0 +1,9 @@
+﻿fold,chosen_coord,source_risk,r2,nrmse,dims,shrink
+Skulls,rh_mean_light,"{'amp_diurnal_light': 280.2731, 'rh_mean_light': 96.3616, 'amp_annual_light': 274.3193}",0.3178,0.826,4,1.0
+Pool,rh_mean_light,"{'amp_diurnal_light': 274.4198, 'rh_mean_light': 132.2464, 'amp_annual_light': 258.0997}",0.73,0.5196,4,1.0
+Sela',rh_mean_light,"{'amp_diurnal_light': 256.6762, 'rh_mean_light': 177.8008, 'amp_annual_light': 280.6668}",-43.2354,6.651,16,0.0
+Tzruya,rh_mean_light,"{'amp_diurnal_light': 241.4349, 'rh_mean_light': 124.3956, 'amp_annual_light': 240.8295}",0.6187,0.6175,4,1.0
+Horror,rh_mean_light,"{'amp_diurnal_light': 270.3985, 'rh_mean_light': 135.3501, 'amp_annual_light': 258.8223}",0.6041,0.6292,4,0.8
+Ureideh,rh_mean_light,"{'amp_diurnal_light': 239.3449, 'rh_mean_light': 118.2349, 'amp_annual_light': 245.1923}",0.6136,0.6216,4,1.0
+Murabba'at 2,rh_mean_light,"{'amp_diurnal_light': 246.8079, 'rh_mean_light': 133.9045, 'amp_annual_light': 289.6694}",-1.4044,1.5506,4,0.6
+Har Sifsof,rh_mean_light,"{'amp_diurnal_light': 53.5344, 'rh_mean_light': 31.2361, 'amp_annual_light': 48.894}",-16.2886,4.158,32,1.0

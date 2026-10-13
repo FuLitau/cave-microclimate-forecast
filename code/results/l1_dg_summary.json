@@ -1,0 +1,1178 @@
+{
+  "protocol": "域 = 年份；源域有标签、目标域零标签（Koodos CTDG 设定）",
+  "anchor": "Koodos, NeurIPS 2024, Continuous Temporal Domain Generalization (arXiv:2405.16075); 代码 github.com/Zekun-Cai/Koodos",
+  "drivers": [
+    "T2M",
+    "RH2M",
+    "WS10M",
+    "PSC",
+    "ALLSKY_SFC_SW_DWN"
+  ],
+  "horizons": [
+    1,
+    6,
+    24,
+    72
+  ],
+  "arms": [
+    "pooled",
+    "nearest",
+    "koopman",
+    "subspace",
+    "oracle"
+  ],
+  "n_lags": 24,
+  "windows": [
+    24,
+    72,
+    168
+  ],
+  "per_task": {
+    "power": {
+      "T2M|h1|interp": {
+        "n_folds": 25,
+        "n_ok": {
+          "pooled": [
+            25,
+            25
+          ],
+          "nearest": [
+            25,
+            25
+          ],
+          "koopman": [
+            25,
+            25
+          ],
+          "subspace": [
+            25,
+            25
+          ],
+          "oracle": [
+            25,
+            25
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.9076,
+          "nearest": 0.8994,
+          "koopman": 0.9059,
+          "subspace": 0.9135,
+          "oracle": 0.9101
+        }
+      },
+      "T2M|h6|interp": {
+        "n_folds": 25,
+        "n_ok": {
+          "pooled": [
+            25,
+            25
+          ],
+          "nearest": [
+            25,
+            25
+          ],
+          "koopman": [
+            25,
+            25
+          ],
+          "subspace": [
+            25,
+            25
+          ],
+          "oracle": [
+            25,
+            25
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.8483,
+          "nearest": 0.8476,
+          "koopman": 0.8459,
+          "subspace": 0.8516,
+          "oracle": 0.8578
+        }
+      },
+      "T2M|h24|interp": {
+        "n_folds": 25,
+        "n_ok": {
+          "pooled": [
+            25,
+            25
+          ],
+          "nearest": [
+            25,
+            25
+          ],
+          "koopman": [
+            25,
+            25
+          ],
+          "subspace": [
+            25,
+            25
+          ],
+          "oracle": [
+            25,
+            25
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.773,
+          "nearest": 0.7866,
+          "koopman": 0.7756,
+          "subspace": 0.7725,
+          "oracle": 0.7761
+        }
+      },
+      "T2M|h72|interp": {
+        "n_folds": 25,
+        "n_ok": {
+          "pooled": [
+            25,
+            25
+          ],
+          "nearest": [
+            25,
+            25
+          ],
+          "koopman": [
+            25,
+            25
+          ],
+          "subspace": [
+            25,
+            25
+          ],
+          "oracle": [
+            25,
+            25
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.6812,
+          "nearest": 0.662,
+          "koopman": 0.6755,
+          "subspace": 0.6531,
+          "oracle": 0.6271
+        }
+      },
+      "T2M|h1|forward": {
+        "n_folds": 21,
+        "n_ok": {
+          "pooled": [
+            21,
+            21
+          ],
+          "nearest": [
+            21,
+            21
+          ],
+          "koopman": [
+            21,
+            21
+          ],
+          "subspace": [
+            21,
+            21
+          ],
+          "oracle": [
+            21,
+            21
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.9052,
+          "nearest": 0.8953,
+          "koopman": 0.889,
+          "subspace": 0.9054,
+          "oracle": 0.9078
+        }
+      },
+      "T2M|h6|forward": {
+        "n_folds": 21,
+        "n_ok": {
+          "pooled": [
+            21,
+            21
+          ],
+          "nearest": [
+            21,
+            21
+          ],
+          "koopman": [
+            21,
+            21
+          ],
+          "subspace": [
+            21,
+            21
+          ],
+          "oracle": [
+            21,
+            21
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.8466,
+          "nearest": 0.8433,
+          "koopman": 0.8371,
+          "subspace": 0.8491,
+          "oracle": 0.848
+        }
+      },
+      "T2M|h24|forward": {
+        "n_folds": 21,
+        "n_ok": {
+          "pooled": [
+            21,
+            21
+          ],
+          "nearest": [
+            21,
+            21
+          ],
+          "koopman": [
+            21,
+            21
+          ],
+          "subspace": [
+            21,
+            21
+          ],
+          "oracle": [
+            21,
+            21
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.7741,
+          "nearest": 0.758,
+          "koopman": 0.7726,
+          "subspace": 0.7705,
+          "oracle": 0.7676
+        }
+      },
+      "T2M|h72|forward": {
+        "n_folds": 21,
+        "n_ok": {
+          "pooled": [
+            21,
+            21
+          ],
+          "nearest": [
+            21,
+            21
+          ],
+          "koopman": [
+            21,
+            21
+          ],
+          "subspace": [
+            21,
+            21
+          ],
+          "oracle": [
+            21,
+            21
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.6757,
+          "nearest": 0.6588,
+          "koopman": 0.6223,
+          "subspace": 0.6407,
+          "oracle": 0.6203
+        }
+      },
+      "RH2M|h1|interp": {
+        "n_folds": 25,
+        "n_ok": {
+          "pooled": [
+            25,
+            25
+          ],
+          "nearest": [
+            25,
+            25
+          ],
+          "koopman": [
+            25,
+            25
+          ],
+          "subspace": [
+            25,
+            25
+          ],
+          "oracle": [
+            25,
+            25
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.8327,
+          "nearest": 0.836,
+          "koopman": 0.8238,
+          "subspace": 0.8379,
+          "oracle": 0.8406
+        }
+      },
+      "RH2M|h6|interp": {
+        "n_folds": 25,
+        "n_ok": {
+          "pooled": [
+            25,
+            25
+          ],
+          "nearest": [
+            25,
+            25
+          ],
+          "koopman": [
+            25,
+            25
+          ],
+          "subspace": [
+            25,
+            25
+          ],
+          "oracle": [
+            25,
+            25
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.5761,
+          "nearest": 0.5746,
+          "koopman": 0.5718,
+          "subspace": 0.5801,
+          "oracle": 0.5692
+        }
+      },
+      "RH2M|h24|interp": {
+        "n_folds": 25,
+        "n_ok": {
+          "pooled": [
+            25,
+            25
+          ],
+          "nearest": [
+            25,
+            25
+          ],
+          "koopman": [
+            25,
+            25
+          ],
+          "subspace": [
+            25,
+            25
+          ],
+          "oracle": [
+            25,
+            25
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.315,
+          "nearest": 0.3043,
+          "koopman": 0.3118,
+          "subspace": 0.3211,
+          "oracle": 0.2991
+        }
+      },
+      "RH2M|h72|interp": {
+        "n_folds": 25,
+        "n_ok": {
+          "pooled": [
+            25,
+            25
+          ],
+          "nearest": [
+            25,
+            25
+          ],
+          "koopman": [
+            25,
+            25
+          ],
+          "subspace": [
+            25,
+            25
+          ],
+          "oracle": [
+            25,
+            25
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.1755,
+          "nearest": 0.1571,
+          "koopman": 0.1808,
+          "subspace": 0.1876,
+          "oracle": 0.1361
+        }
+      },
+      "RH2M|h1|forward": {
+        "n_folds": 21,
+        "n_ok": {
+          "pooled": [
+            21,
+            21
+          ],
+          "nearest": [
+            21,
+            21
+          ],
+          "koopman": [
+            21,
+            21
+          ],
+          "subspace": [
+            21,
+            21
+          ],
+          "oracle": [
+            21,
+            21
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.826,
+          "nearest": 0.8287,
+          "koopman": 0.8312,
+          "subspace": 0.8327,
+          "oracle": 0.8397
+        }
+      },
+      "RH2M|h6|forward": {
+        "n_folds": 21,
+        "n_ok": {
+          "pooled": [
+            21,
+            21
+          ],
+          "nearest": [
+            21,
+            21
+          ],
+          "koopman": [
+            21,
+            21
+          ],
+          "subspace": [
+            21,
+            21
+          ],
+          "oracle": [
+            21,
+            21
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.5695,
+          "nearest": 0.5719,
+          "koopman": 0.5738,
+          "subspace": 0.5711,
+          "oracle": 0.566
+        }
+      },
+      "RH2M|h24|forward": {
+        "n_folds": 21,
+        "n_ok": {
+          "pooled": [
+            21,
+            21
+          ],
+          "nearest": [
+            21,
+            21
+          ],
+          "koopman": [
+            21,
+            21
+          ],
+          "subspace": [
+            21,
+            21
+          ],
+          "oracle": [
+            21,
+            21
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.2792,
+          "nearest": 0.282,
+          "koopman": 0.2956,
+          "subspace": 0.2823,
+          "oracle": 0.2526
+        }
+      },
+      "RH2M|h72|forward": {
+        "n_folds": 21,
+        "n_ok": {
+          "pooled": [
+            21,
+            21
+          ],
+          "nearest": [
+            21,
+            21
+          ],
+          "koopman": [
+            21,
+            21
+          ],
+          "subspace": [
+            21,
+            21
+          ],
+          "oracle": [
+            21,
+            21
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.1498,
+          "nearest": 0.13,
+          "koopman": 0.156,
+          "subspace": 0.1674,
+          "oracle": 0.0935
+        }
+      }
+    },
+    "isd": {
+      "RH_isd|h1|interp": {
+        "n_folds": 8,
+        "n_ok": {
+          "pooled": [
+            8,
+            8
+          ],
+          "nearest": [
+            8,
+            8
+          ],
+          "koopman": [
+            8,
+            8
+          ],
+          "subspace": [
+            8,
+            8
+          ],
+          "oracle": [
+            8,
+            8
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.447,
+          "nearest": 0.4498,
+          "koopman": 0.4229,
+          "subspace": 0.4432,
+          "oracle": 0.4325
+        }
+      },
+      "RH_isd|h6|interp": {
+        "n_folds": 8,
+        "n_ok": {
+          "pooled": [
+            8,
+            8
+          ],
+          "nearest": [
+            8,
+            8
+          ],
+          "koopman": [
+            8,
+            8
+          ],
+          "subspace": [
+            8,
+            8
+          ],
+          "oracle": [
+            8,
+            8
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.4096,
+          "nearest": 0.4288,
+          "koopman": 0.4613,
+          "subspace": 0.4107,
+          "oracle": 0.3639
+        }
+      },
+      "RH_isd|h24|interp": {
+        "n_folds": 8,
+        "n_ok": {
+          "pooled": [
+            8,
+            8
+          ],
+          "nearest": [
+            8,
+            8
+          ],
+          "koopman": [
+            8,
+            8
+          ],
+          "subspace": [
+            8,
+            8
+          ],
+          "oracle": [
+            8,
+            8
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.292,
+          "nearest": 0.3417,
+          "koopman": 0.302,
+          "subspace": 0.2899,
+          "oracle": 0.3084
+        }
+      },
+      "RH_isd|h72|interp": {
+        "n_folds": 8,
+        "n_ok": {
+          "pooled": [
+            8,
+            8
+          ],
+          "nearest": [
+            8,
+            8
+          ],
+          "koopman": [
+            8,
+            8
+          ],
+          "subspace": [
+            8,
+            8
+          ],
+          "oracle": [
+            8,
+            8
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.1935,
+          "nearest": 0.2107,
+          "koopman": 0.1286,
+          "subspace": 0.1997,
+          "oracle": 0.1873
+        }
+      },
+      "RH_isd|h1|forward": {
+        "n_folds": 4,
+        "n_ok": {
+          "pooled": [
+            4,
+            4
+          ],
+          "nearest": [
+            4,
+            4
+          ],
+          "koopman": [
+            4,
+            4
+          ],
+          "subspace": [
+            4,
+            4
+          ],
+          "oracle": [
+            4,
+            4
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.4546,
+          "nearest": 0.4515,
+          "koopman": -5.8313,
+          "subspace": 0.4305,
+          "oracle": 0.3861
+        }
+      },
+      "RH_isd|h6|forward": {
+        "n_folds": 4,
+        "n_ok": {
+          "pooled": [
+            4,
+            4
+          ],
+          "nearest": [
+            4,
+            4
+          ],
+          "koopman": [
+            4,
+            4
+          ],
+          "subspace": [
+            4,
+            4
+          ],
+          "oracle": [
+            4,
+            4
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.4094,
+          "nearest": 0.4267,
+          "koopman": -7.3933,
+          "subspace": 0.4041,
+          "oracle": 0.3384
+        }
+      },
+      "RH_isd|h24|forward": {
+        "n_folds": 4,
+        "n_ok": {
+          "pooled": [
+            4,
+            4
+          ],
+          "nearest": [
+            4,
+            4
+          ],
+          "koopman": [
+            4,
+            4
+          ],
+          "subspace": [
+            4,
+            4
+          ],
+          "oracle": [
+            4,
+            4
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.3459,
+          "nearest": 0.3595,
+          "koopman": -3.8016,
+          "subspace": 0.3264,
+          "oracle": 0.2064
+        }
+      },
+      "RH_isd|h72|forward": {
+        "n_folds": 4,
+        "n_ok": {
+          "pooled": [
+            4,
+            4
+          ],
+          "nearest": [
+            4,
+            4
+          ],
+          "koopman": [
+            4,
+            4
+          ],
+          "subspace": [
+            4,
+            4
+          ],
+          "oracle": [
+            4,
+            4
+          ]
+        },
+        "median_r2": {
+          "pooled": 0.3078,
+          "nearest": 0.3148,
+          "koopman": -3.1057,
+          "subspace": 0.297,
+          "oracle": 0.1875
+        }
+      }
+    }
+  },
+  "headline_interp": {
+    "T2M|h1|interp": {
+      "n_folds": 25,
+      "n_ok": {
+        "pooled": [
+          25,
+          25
+        ],
+        "nearest": [
+          25,
+          25
+        ],
+        "koopman": [
+          25,
+          25
+        ],
+        "subspace": [
+          25,
+          25
+        ],
+        "oracle": [
+          25,
+          25
+        ]
+      },
+      "pooled": 0.9076,
+      "nearest": 0.8994,
+      "koopman": 0.9059,
+      "subspace": 0.9135,
+      "oracle": 0.9101,
+      "gain_vs_pooled": 0.0059
+    },
+    "T2M|h6|interp": {
+      "n_folds": 25,
+      "n_ok": {
+        "pooled": [
+          25,
+          25
+        ],
+        "nearest": [
+          25,
+          25
+        ],
+        "koopman": [
+          25,
+          25
+        ],
+        "subspace": [
+          25,
+          25
+        ],
+        "oracle": [
+          25,
+          25
+        ]
+      },
+      "pooled": 0.8483,
+      "nearest": 0.8476,
+      "koopman": 0.8459,
+      "subspace": 0.8516,
+      "oracle": 0.8578,
+      "gain_vs_pooled": 0.0033
+    },
+    "T2M|h24|interp": {
+      "n_folds": 25,
+      "n_ok": {
+        "pooled": [
+          25,
+          25
+        ],
+        "nearest": [
+          25,
+          25
+        ],
+        "koopman": [
+          25,
+          25
+        ],
+        "subspace": [
+          25,
+          25
+        ],
+        "oracle": [
+          25,
+          25
+        ]
+      },
+      "pooled": 0.773,
+      "nearest": 0.7866,
+      "koopman": 0.7756,
+      "subspace": 0.7725,
+      "oracle": 0.7761,
+      "gain_vs_pooled": -0.0005
+    },
+    "T2M|h72|interp": {
+      "n_folds": 25,
+      "n_ok": {
+        "pooled": [
+          25,
+          25
+        ],
+        "nearest": [
+          25,
+          25
+        ],
+        "koopman": [
+          25,
+          25
+        ],
+        "subspace": [
+          25,
+          25
+        ],
+        "oracle": [
+          25,
+          25
+        ]
+      },
+      "pooled": 0.6812,
+      "nearest": 0.662,
+      "koopman": 0.6755,
+      "subspace": 0.6531,
+      "oracle": 0.6271,
+      "gain_vs_pooled": -0.0281
+    },
+    "RH2M|h1|interp": {
+      "n_folds": 25,
+      "n_ok": {
+        "pooled": [
+          25,
+          25
+        ],
+        "nearest": [
+          25,
+          25
+        ],
+        "koopman": [
+          25,
+          25
+        ],
+        "subspace": [
+          25,
+          25
+        ],
+        "oracle": [
+          25,
+          25
+        ]
+      },
+      "pooled": 0.8327,
+      "nearest": 0.836,
+      "koopman": 0.8238,
+      "subspace": 0.8379,
+      "oracle": 0.8406,
+      "gain_vs_pooled": 0.0052
+    },
+    "RH2M|h6|interp": {
+      "n_folds": 25,
+      "n_ok": {
+        "pooled": [
+          25,
+          25
+        ],
+        "nearest": [
+          25,
+          25
+        ],
+        "koopman": [
+          25,
+          25
+        ],
+        "subspace": [
+          25,
+          25
+        ],
+        "oracle": [
+          25,
+          25
+        ]
+      },
+      "pooled": 0.5761,
+      "nearest": 0.5746,
+      "koopman": 0.5718,
+      "subspace": 0.5801,
+      "oracle": 0.5692,
+      "gain_vs_pooled": 0.004
+    },
+    "RH2M|h24|interp": {
+      "n_folds": 25,
+      "n_ok": {
+        "pooled": [
+          25,
+          25
+        ],
+        "nearest": [
+          25,
+          25
+        ],
+        "koopman": [
+          25,
+          25
+        ],
+        "subspace": [
+          25,
+          25
+        ],
+        "oracle": [
+          25,
+          25
+        ]
+      },
+      "pooled": 0.315,
+      "nearest": 0.3043,
+      "koopman": 0.3118,
+      "subspace": 0.3211,
+      "oracle": 0.2991,
+      "gain_vs_pooled": 0.0061
+    },
+    "RH2M|h72|interp": {
+      "n_folds": 25,
+      "n_ok": {
+        "pooled": [
+          25,
+          25
+        ],
+        "nearest": [
+          25,
+          25
+        ],
+        "koopman": [
+          25,
+          25
+        ],
+        "subspace": [
+          25,
+          25
+        ],
+        "oracle": [
+          25,
+          25
+        ]
+      },
+      "pooled": 0.1755,
+      "nearest": 0.1571,
+      "koopman": 0.1808,
+      "subspace": 0.1876,
+      "oracle": 0.1361,
+      "gain_vs_pooled": 0.0121
+    },
+    "RH_isd|h1|interp": {
+      "n_folds": 8,
+      "n_ok": {
+        "pooled": [
+          8,
+          8
+        ],
+        "nearest": [
+          8,
+          8
+        ],
+        "koopman": [
+          8,
+          8
+        ],
+        "subspace": [
+          8,
+          8
+        ],
+        "oracle": [
+          8,
+          8
+        ]
+      },
+      "pooled": 0.447,
+      "nearest": 0.4498,
+      "koopman": 0.4229,
+      "subspace": 0.4432,
+      "oracle": 0.4325,
+      "gain_vs_pooled": -0.0038
+    },
+    "RH_isd|h6|interp": {
+      "n_folds": 8,
+      "n_ok": {
+        "pooled": [
+          8,
+          8
+        ],
+        "nearest": [
+          8,
+          8
+        ],
+        "koopman": [
+          8,
+          8
+        ],
+        "subspace": [
+          8,
+          8
+        ],
+        "oracle": [
+          8,
+          8
+        ]
+      },
+      "pooled": 0.4096,
+      "nearest": 0.4288,
+      "koopman": 0.4613,
+      "subspace": 0.4107,
+      "oracle": 0.3639,
+      "gain_vs_pooled": 0.0011
+    },
+    "RH_isd|h24|interp": {
+      "n_folds": 8,
+      "n_ok": {
+        "pooled": [
+          8,
+          8
+        ],
+        "nearest": [
+          8,
+          8
+        ],
+        "koopman": [
+          8,
+          8
+        ],
+        "subspace": [
+          8,
+          8
+        ],
+        "oracle": [
+          8,
+          8
+        ]
+      },
+      "pooled": 0.292,
+      "nearest": 0.3417,
+      "koopman": 0.302,
+      "subspace": 0.2899,
+      "oracle": 0.3084,
+      "gain_vs_pooled": -0.0021
+    },
+    "RH_isd|h72|interp": {
+      "n_folds": 8,
+      "n_ok": {
+        "pooled": [
+          8,
+          8
+        ],
+        "nearest": [
+          8,
+          8
+        ],
+        "koopman": [
+          8,
+          8
+        ],
+        "subspace": [
+          8,
+          8
+        ],
+        "oracle": [
+          8,
+          8
+        ]
+      },
+      "pooled": 0.1935,
+      "nearest": 0.2107,
+      "koopman": 0.1286,
+      "subspace": 0.1997,
+      "oracle": 0.1873,
+      "gain_vs_pooled": 0.0062
+    }
+  }
+}

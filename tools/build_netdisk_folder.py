@@ -31,7 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 THEME = "智慧气象"                     # 赛题名称
-WORK = "石窟天盾-风险对齐的窟内微气候预报"   # 作品名称（冒号在 Windows 文件名中非法，故用连字符）
+WORK = "石窟天盾-基于域泛化的窟内微气候迁移"   # 作品名称（冒号在 Windows 文件名中非法，故用连字符）
 DEST_ROOT = ROOT / "dist" / "网盘上传"
 
 # (源文件, 材料名称)

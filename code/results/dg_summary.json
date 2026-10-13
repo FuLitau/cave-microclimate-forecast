@@ -1,0 +1,811 @@
+{
+  "protocol": "leave-one-cave-out (域 = 洞窟)，目标域零标签",
+  "n_caves": 8,
+  "caves": [
+    "Skulls",
+    "Pool",
+    "Sela'",
+    "Tzruya",
+    "Horror",
+    "Ureideh",
+    "Murabba'at 2",
+    "Har Sifsof"
+  ],
+  "arms": [
+    "pooled",
+    "group_dro",
+    "vrex",
+    "nearest",
+    "koopman",
+    "subspace",
+    "oracle"
+  ],
+  "fallback_coord": "rh_mean_light",
+  "coord_labels": {
+    "amp_diurnal_light": "洞外 Light 区 RH 日周期振幅 (%)",
+    "rh_mean_light": "洞外 Light 区 RH 均值 (%)",
+    "amp_annual_light": "洞外 Light 区 RH 年周期振幅 (%)"
+  },
+  "source": "ICCP Zenodo 10.5281/zenodo.17505739 (CC-BY-4.0)",
+  "per_coord": {
+    "amp_diurnal_light": {
+      "median_r2": {
+        "pooled": -0.3235,
+        "group_dro": -35.0936,
+        "vrex": -34.0937,
+        "nearest": -1.4311,
+        "koopman": -53.9098,
+        "subspace": -2.9581,
+        "oracle": 0.6061
+      },
+      "median_rmse": {
+        "pooled": 7.798,
+        "group_dro": 41.8468,
+        "vrex": 40.6877,
+        "nearest": 10.1143,
+        "koopman": 51.1081,
+        "subspace": 10.7059,
+        "oracle": 3.5426
+      },
+      "median_nrmse": {
+        "pooled": 1.1494,
+        "group_dro": 6.0039,
+        "vrex": 5.9221,
+        "nearest": 1.4547,
+        "koopman": 7.41,
+        "subspace": 1.9476,
+        "oracle": 0.6207
+      },
+      "mean_r2": {
+        "pooled": -9.3224,
+        "group_dro": -61.4442,
+        "vrex": -63.5851,
+        "nearest": -22.2356,
+        "koopman": -55.9261,
+        "subspace": -5.7194,
+        "oracle": -0.4011
+      },
+      "positive_r2_count": {
+        "pooled": 3,
+        "group_dro": 0,
+        "vrex": 0,
+        "nearest": 4,
+        "koopman": 0,
+        "subspace": 1,
+        "oracle": 5
+      },
+      "nrmse_below_1_count": {
+        "pooled": 3,
+        "group_dro": 0,
+        "vrex": 0,
+        "nearest": 4,
+        "koopman": 0,
+        "subspace": 1,
+        "oracle": 5
+      },
+      "wins_vs_pooled": {
+        "group_dro": 0,
+        "vrex": 1,
+        "nearest": 5,
+        "koopman": 0,
+        "subspace": 4,
+        "oracle": 8
+      },
+      "wins_vs_nearest": {
+        "pooled": 3,
+        "group_dro": 2,
+        "vrex": 2,
+        "koopman": 1,
+        "subspace": 3,
+        "oracle": 8
+      },
+      "per_fold_r2": {
+        "Har Sifsof": {
+          "pooled": -23.2067,
+          "group_dro": -23.7358,
+          "vrex": -21.7861,
+          "nearest": -23.918,
+          "koopman": -27.1023,
+          "subspace": -22.4114,
+          "oracle": -0.6468
+        },
+        "Horror": {
+          "pooled": 0.0307,
+          "group_dro": -32.5209,
+          "vrex": -32.3027,
+          "nearest": 0.3867,
+          "koopman": -53.2353,
+          "subspace": 0.3866,
+          "oracle": 0.7213
+        },
+        "Murabba'at 2": {
+          "pooled": -7.163,
+          "group_dro": -63.6107,
+          "vrex": -16.4273,
+          "nearest": -3.0632,
+          "koopman": -88.5597,
+          "subspace": -6.7957,
+          "oracle": -0.7312
+        },
+        "Pool": {
+          "pooled": -0.4352,
+          "group_dro": -37.6664,
+          "vrex": -35.8847,
+          "nearest": 0.2242,
+          "koopman": -61.8146,
+          "subspace": -1.2093,
+          "oracle": 0.7482
+        },
+        "Sela'": {
+          "pooled": -44.1133,
+          "group_dro": -204.7561,
+          "vrex": -249.4459,
+          "nearest": -73.8215,
+          "koopman": -118.8576,
+          "subspace": -9.2559,
+          "oracle": -5.4745
+        },
+        "Skulls": {
+          "pooled": 0.1591,
+          "group_dro": -24.8631,
+          "vrex": -31.3306,
+          "nearest": 0.2011,
+          "koopman": -38.943,
+          "subspace": -0.5533,
+          "oracle": 0.8973
+        },
+        "Tzruya": {
+          "pooled": -0.2118,
+          "group_dro": -77.8213,
+          "vrex": -77.3574,
+          "nearest": -78.2901,
+          "koopman": -4.312,
+          "subspace": -4.5412,
+          "oracle": 0.4909
+        },
+        "Ureideh": {
+          "pooled": 0.3607,
+          "group_dro": -26.5795,
+          "vrex": -44.1461,
+          "nearest": 0.3958,
+          "koopman": -54.5843,
+          "subspace": -1.3751,
+          "oracle": 0.7856
+        }
+      },
+      "per_fold_nrmse": {
+        "Har Sifsof": {
+          "pooled": 4.92,
+          "group_dro": 4.9735,
+          "vrex": 4.7735,
+          "nearest": 4.9918,
+          "koopman": 5.3012,
+          "subspace": 4.8385,
+          "oracle": 1.2833
+        },
+        "Horror": {
+          "pooled": 0.9845,
+          "group_dro": 5.7897,
+          "vrex": 5.7708,
+          "nearest": 0.7831,
+          "koopman": 7.3645,
+          "subspace": 0.7832,
+          "oracle": 0.5279
+        },
+        "Murabba'at 2": {
+          "pooled": 2.8571,
+          "group_dro": 8.0381,
+          "vrex": 4.1746,
+          "nearest": 2.0157,
+          "koopman": 9.4636,
+          "subspace": 2.7921,
+          "oracle": 1.3158
+        },
+        "Pool": {
+          "pooled": 1.198,
+          "group_dro": 6.2182,
+          "vrex": 6.0733,
+          "nearest": 0.8808,
+          "koopman": 7.9256,
+          "subspace": 1.4864,
+          "oracle": 0.5018
+        },
+        "Sela'": {
+          "pooled": 6.7166,
+          "group_dro": 14.3442,
+          "vrex": 15.8255,
+          "nearest": 8.6499,
+          "koopman": 10.9479,
+          "subspace": 3.2025,
+          "oracle": 2.5445
+        },
+        "Skulls": {
+          "pooled": 0.917,
+          "group_dro": 5.0856,
+          "vrex": 5.686,
+          "nearest": 0.8938,
+          "koopman": 6.32,
+          "subspace": 1.2463,
+          "oracle": 0.3204
+        },
+        "Tzruya": {
+          "pooled": 1.1008,
+          "group_dro": 8.8781,
+          "vrex": 8.852,
+          "nearest": 8.9045,
+          "koopman": 2.3048,
+          "subspace": 2.354,
+          "oracle": 0.7135
+        },
+        "Ureideh": {
+          "pooled": 0.7996,
+          "group_dro": 5.2516,
+          "vrex": 6.7191,
+          "nearest": 0.7773,
+          "koopman": 7.4555,
+          "subspace": 1.5411,
+          "oracle": 0.463
+        }
+      }
+    },
+    "rh_mean_light": {
+      "median_r2": {
+        "pooled": -0.3235,
+        "group_dro": -35.0936,
+        "vrex": -34.0937,
+        "nearest": 0.2216,
+        "koopman": -27.3191,
+        "subspace": 0.4609,
+        "oracle": 0.6061
+      },
+      "median_rmse": {
+        "pooled": 7.798,
+        "group_dro": 41.8468,
+        "vrex": 40.6877,
+        "nearest": 5.6509,
+        "koopman": 36.2895,
+        "subspace": 5.6785,
+        "oracle": 3.5426
+      },
+      "median_nrmse": {
+        "pooled": 1.1494,
+        "group_dro": 6.0039,
+        "vrex": 5.9221,
+        "nearest": 0.8823,
+        "koopman": 5.3046,
+        "subspace": 0.7276,
+        "oracle": 0.6207
+      },
+      "mean_r2": {
+        "pooled": -9.3224,
+        "group_dro": -61.4442,
+        "vrex": -63.5851,
+        "nearest": -7.5606,
+        "koopman": -86.7831,
+        "subspace": -7.2555,
+        "oracle": -0.4011
+      },
+      "positive_r2_count": {
+        "pooled": 3,
+        "group_dro": 0,
+        "vrex": 0,
+        "nearest": 5,
+        "koopman": 0,
+        "subspace": 5,
+        "oracle": 5
+      },
+      "nrmse_below_1_count": {
+        "pooled": 3,
+        "group_dro": 0,
+        "vrex": 0,
+        "nearest": 5,
+        "koopman": 0,
+        "subspace": 5,
+        "oracle": 5
+      },
+      "wins_vs_pooled": {
+        "group_dro": 0,
+        "vrex": 1,
+        "nearest": 8,
+        "koopman": 1,
+        "subspace": 8,
+        "oracle": 8
+      },
+      "wins_vs_nearest": {
+        "pooled": 0,
+        "group_dro": 0,
+        "vrex": 0,
+        "koopman": 1,
+        "subspace": 5,
+        "oracle": 8
+      },
+      "per_fold_r2": {
+        "Har Sifsof": {
+          "pooled": -23.2067,
+          "group_dro": -23.7358,
+          "vrex": -21.7861,
+          "nearest": -16.8856,
+          "koopman": -117.7358,
+          "subspace": -16.2886,
+          "oracle": -0.6468
+        },
+        "Horror": {
+          "pooled": 0.0307,
+          "group_dro": -32.5209,
+          "vrex": -32.3027,
+          "nearest": 0.6999,
+          "koopman": -3.7335,
+          "subspace": 0.6041,
+          "oracle": 0.7213
+        },
+        "Murabba'at 2": {
+          "pooled": -7.163,
+          "group_dro": -63.6107,
+          "vrex": -16.4273,
+          "nearest": -3.0632,
+          "koopman": -1.8085,
+          "subspace": -1.4044,
+          "oracle": -0.7312
+        },
+        "Pool": {
+          "pooled": -0.4352,
+          "group_dro": -37.6664,
+          "vrex": -35.8847,
+          "nearest": 0.2242,
+          "koopman": -1.8085,
+          "subspace": 0.73,
+          "oracle": 0.7482
+        },
+        "Sela'": {
+          "pooled": -44.1133,
+          "group_dro": -204.7561,
+          "vrex": -249.4459,
+          "nearest": -42.8256,
+          "koopman": -453.8791,
+          "subspace": -43.2354,
+          "oracle": -5.4745
+        },
+        "Skulls": {
+          "pooled": 0.1591,
+          "group_dro": -24.8631,
+          "vrex": -31.3306,
+          "nearest": 0.7505,
+          "koopman": -31.8296,
+          "subspace": 0.3178,
+          "oracle": 0.8973
+        },
+        "Tzruya": {
+          "pooled": -0.2118,
+          "group_dro": -77.8213,
+          "vrex": -77.3574,
+          "nearest": 0.2189,
+          "koopman": -60.6614,
+          "subspace": 0.6187,
+          "oracle": 0.4909
+        },
+        "Ureideh": {
+          "pooled": 0.3607,
+          "group_dro": -26.5795,
+          "vrex": -44.1461,
+          "nearest": 0.3958,
+          "koopman": -22.8086,
+          "subspace": 0.6136,
+          "oracle": 0.7856
+        }
+      },
+      "per_fold_nrmse": {
+        "Har Sifsof": {
+          "pooled": 4.92,
+          "group_dro": 4.9735,
+          "vrex": 4.7735,
+          "nearest": 4.2291,
+          "koopman": 10.8966,
+          "subspace": 4.158,
+          "oracle": 1.2833
+        },
+        "Horror": {
+          "pooled": 0.9845,
+          "group_dro": 5.7897,
+          "vrex": 5.7708,
+          "nearest": 0.5478,
+          "koopman": 2.1757,
+          "subspace": 0.6292,
+          "oracle": 0.5279
+        },
+        "Murabba'at 2": {
+          "pooled": 2.8571,
+          "group_dro": 8.0381,
+          "vrex": 4.1746,
+          "nearest": 2.0157,
+          "koopman": 1.6758,
+          "subspace": 1.5506,
+          "oracle": 1.3158
+        },
+        "Pool": {
+          "pooled": 1.198,
+          "group_dro": 6.2182,
+          "vrex": 6.0733,
+          "nearest": 0.8808,
+          "koopman": 1.6759,
+          "subspace": 0.5196,
+          "oracle": 0.5018
+        },
+        "Sela'": {
+          "pooled": 6.7166,
+          "group_dro": 14.3442,
+          "vrex": 15.8255,
+          "nearest": 6.6201,
+          "koopman": 21.3279,
+          "subspace": 6.651,
+          "oracle": 2.5445
+        },
+        "Skulls": {
+          "pooled": 0.917,
+          "group_dro": 5.0856,
+          "vrex": 5.686,
+          "nearest": 0.4995,
+          "koopman": 5.7297,
+          "subspace": 0.826,
+          "oracle": 0.3204
+        },
+        "Tzruya": {
+          "pooled": 1.1008,
+          "group_dro": 8.8781,
+          "vrex": 8.852,
+          "nearest": 0.8838,
+          "koopman": 7.8525,
+          "subspace": 0.6175,
+          "oracle": 0.7135
+        },
+        "Ureideh": {
+          "pooled": 0.7996,
+          "group_dro": 5.2516,
+          "vrex": 6.7191,
+          "nearest": 0.7773,
+          "koopman": 4.8794,
+          "subspace": 0.6216,
+          "oracle": 0.463
+        }
+      }
+    },
+    "amp_annual_light": {
+      "median_r2": {
+        "pooled": -0.3235,
+        "group_dro": -35.0936,
+        "vrex": -34.0937,
+        "nearest": 0.1432,
+        "koopman": -57.525,
+        "subspace": -0.2326,
+        "oracle": 0.6061
+      },
+      "median_rmse": {
+        "pooled": 7.798,
+        "group_dro": 41.8468,
+        "vrex": 40.6877,
+        "nearest": 5.1357,
+        "koopman": 50.4642,
+        "subspace": 6.5209,
+        "oracle": 3.5426
+      },
+      "median_nrmse": {
+        "pooled": 1.1494,
+        "group_dro": 6.0039,
+        "vrex": 5.9221,
+        "nearest": 0.9145,
+        "koopman": 7.645,
+        "subspace": 1.1102,
+        "oracle": 0.6207
+      },
+      "mean_r2": {
+        "pooled": -9.3224,
+        "group_dro": -61.4442,
+        "vrex": -63.5851,
+        "nearest": -22.3048,
+        "koopman": -67.7731,
+        "subspace": -5.003,
+        "oracle": -0.4011
+      },
+      "positive_r2_count": {
+        "pooled": 3,
+        "group_dro": 0,
+        "vrex": 0,
+        "nearest": 4,
+        "koopman": 0,
+        "subspace": 3,
+        "oracle": 5
+      },
+      "nrmse_below_1_count": {
+        "pooled": 3,
+        "group_dro": 0,
+        "vrex": 0,
+        "nearest": 4,
+        "koopman": 0,
+        "subspace": 3,
+        "oracle": 5
+      },
+      "wins_vs_pooled": {
+        "group_dro": 0,
+        "vrex": 1,
+        "nearest": 5,
+        "koopman": 0,
+        "subspace": 6,
+        "oracle": 8
+      },
+      "wins_vs_nearest": {
+        "pooled": 3,
+        "group_dro": 2,
+        "vrex": 2,
+        "koopman": 1,
+        "subspace": 5,
+        "oracle": 8
+      },
+      "per_fold_r2": {
+        "Har Sifsof": {
+          "pooled": -23.2067,
+          "group_dro": -23.7358,
+          "vrex": -21.7861,
+          "nearest": -28.4124,
+          "koopman": -91.0306,
+          "subspace": -21.8562,
+          "oracle": -0.6468
+        },
+        "Horror": {
+          "pooled": 0.0307,
+          "group_dro": -32.5209,
+          "vrex": -32.3027,
+          "nearest": 0.7083,
+          "koopman": -53.2353,
+          "subspace": -0.2157,
+          "oracle": 0.7213
+        },
+        "Murabba'at 2": {
+          "pooled": -7.163,
+          "group_dro": -63.6107,
+          "vrex": -16.4273,
+          "nearest": -66.6545,
+          "koopman": -49.1418,
+          "subspace": -10.3823,
+          "oracle": -0.7312
+        },
+        "Pool": {
+          "pooled": -0.4352,
+          "group_dro": -37.6664,
+          "vrex": -35.8847,
+          "nearest": 0.4044,
+          "koopman": -61.8146,
+          "subspace": -0.2496,
+          "oracle": 0.7482
+        },
+        "Sela'": {
+          "pooled": -44.1133,
+          "group_dro": -204.7561,
+          "vrex": -249.4459,
+          "nearest": -85.5304,
+          "koopman": -96.0899,
+          "subspace": -8.4659,
+          "oracle": -5.4745
+        },
+        "Skulls": {
+          "pooled": 0.1591,
+          "group_dro": -24.8631,
+          "vrex": -31.3306,
+          "nearest": 0.6337,
+          "koopman": -38.943,
+          "subspace": 0.5429,
+          "oracle": 0.8973
+        },
+        "Tzruya": {
+          "pooled": -0.2118,
+          "group_dro": -77.8213,
+          "vrex": -77.3574,
+          "nearest": -0.118,
+          "koopman": -106.7528,
+          "subspace": 0.0677,
+          "oracle": 0.4909
+        },
+        "Ureideh": {
+          "pooled": 0.3607,
+          "group_dro": -26.5795,
+          "vrex": -44.1461,
+          "nearest": 0.5307,
+          "koopman": -45.1769,
+          "subspace": 0.5351,
+          "oracle": 0.7856
+        }
+      },
+      "per_fold_nrmse": {
+        "Har Sifsof": {
+          "pooled": 4.92,
+          "group_dro": 4.9735,
+          "vrex": 4.7735,
+          "nearest": 5.4233,
+          "koopman": 9.5933,
+          "subspace": 4.7808,
+          "oracle": 1.2833
+        },
+        "Horror": {
+          "pooled": 0.9845,
+          "group_dro": 5.7897,
+          "vrex": 5.7708,
+          "nearest": 0.5401,
+          "koopman": 7.3645,
+          "subspace": 1.1026,
+          "oracle": 0.5279
+        },
+        "Murabba'at 2": {
+          "pooled": 2.8571,
+          "group_dro": 8.0381,
+          "vrex": 4.1746,
+          "nearest": 8.2252,
+          "koopman": 7.0811,
+          "subspace": 3.3738,
+          "oracle": 1.3158
+        },
+        "Pool": {
+          "pooled": 1.198,
+          "group_dro": 6.2182,
+          "vrex": 6.0733,
+          "nearest": 0.7717,
+          "koopman": 7.9256,
+          "subspace": 1.1179,
+          "oracle": 0.5018
+        },
+        "Sela'": {
+          "pooled": 6.7166,
+          "group_dro": 14.3442,
+          "vrex": 15.8255,
+          "nearest": 9.3022,
+          "koopman": 9.8534,
+          "subspace": 3.0767,
+          "oracle": 2.5445
+        },
+        "Skulls": {
+          "pooled": 0.917,
+          "group_dro": 5.0856,
+          "vrex": 5.686,
+          "nearest": 0.6052,
+          "koopman": 6.32,
+          "subspace": 0.6761,
+          "oracle": 0.3204
+        },
+        "Tzruya": {
+          "pooled": 1.1008,
+          "group_dro": 8.8781,
+          "vrex": 8.852,
+          "nearest": 1.0573,
+          "koopman": 10.3804,
+          "subspace": 0.9656,
+          "oracle": 0.7135
+        },
+        "Ureideh": {
+          "pooled": 0.7996,
+          "group_dro": 5.2516,
+          "vrex": 6.7191,
+          "nearest": 0.6851,
+          "koopman": 6.7954,
+          "subspace": 0.6818,
+          "oracle": 0.463
+        }
+      }
+    }
+  },
+  "deployable_protocol": {
+    "note": "域坐标由源域侧内层留一风险选出（目标域零参与），逐洞记录",
+    "per_fold": [
+      {
+        "fold": "Skulls",
+        "chosen_coord": "rh_mean_light",
+        "source_risk": {
+          "amp_diurnal_light": 280.2731,
+          "rh_mean_light": 96.3616,
+          "amp_annual_light": 274.3193
+        },
+        "r2": 0.3178,
+        "nrmse": 0.826,
+        "dims": 4,
+        "shrink": 1.0
+      },
+      {
+        "fold": "Pool",
+        "chosen_coord": "rh_mean_light",
+        "source_risk": {
+          "amp_diurnal_light": 274.4198,
+          "rh_mean_light": 132.2464,
+          "amp_annual_light": 258.0997
+        },
+        "r2": 0.73,
+        "nrmse": 0.5196,
+        "dims": 4,
+        "shrink": 1.0
+      },
+      {
+        "fold": "Sela'",
+        "chosen_coord": "rh_mean_light",
+        "source_risk": {
+          "amp_diurnal_light": 256.6762,
+          "rh_mean_light": 177.8008,
+          "amp_annual_light": 280.6668
+        },
+        "r2": -43.2354,
+        "nrmse": 6.651,
+        "dims": 16,
+        "shrink": 0.0
+      },
+      {
+        "fold": "Tzruya",
+        "chosen_coord": "rh_mean_light",
+        "source_risk": {
+          "amp_diurnal_light": 241.4349,
+          "rh_mean_light": 124.3956,
+          "amp_annual_light": 240.8295
+        },
+        "r2": 0.6187,
+        "nrmse": 0.6175,
+        "dims": 4,
+        "shrink": 1.0
+      },
+      {
+        "fold": "Horror",
+        "chosen_coord": "rh_mean_light",
+        "source_risk": {
+          "amp_diurnal_light": 270.3985,
+          "rh_mean_light": 135.3501,
+          "amp_annual_light": 258.8223
+        },
+        "r2": 0.6041,
+        "nrmse": 0.6292,
+        "dims": 4,
+        "shrink": 0.8
+      },
+      {
+        "fold": "Ureideh",
+        "chosen_coord": "rh_mean_light",
+        "source_risk": {
+          "amp_diurnal_light": 239.3449,
+          "rh_mean_light": 118.2349,
+          "amp_annual_light": 245.1923
+        },
+        "r2": 0.6136,
+        "nrmse": 0.6216,
+        "dims": 4,
+        "shrink": 1.0
+      },
+      {
+        "fold": "Murabba'at 2",
+        "chosen_coord": "rh_mean_light",
+        "source_risk": {
+          "amp_diurnal_light": 246.8079,
+          "rh_mean_light": 133.9045,
+          "amp_annual_light": 289.6694
+        },
+        "r2": -1.4044,
+        "nrmse": 1.5506,
+        "dims": 4,
+        "shrink": 0.6
+      },
+      {
+        "fold": "Har Sifsof",
+        "chosen_coord": "rh_mean_light",
+        "source_risk": {
+          "amp_diurnal_light": 53.5344,
+          "rh_mean_light": 31.2361,
+          "amp_annual_light": 48.894
+        },
+        "r2": -16.2886,
+        "nrmse": 4.158,
+        "dims": 32,
+        "shrink": 1.0
+      }
+    ],
+    "median_r2": 0.4609,
+    "median_nrmse": 0.7276,
+    "positive_r2_count": 5,
+    "nrmse_below_1_count": 5
+  },
+  "in_cave_baseline": {
+    "note": "validate_iccp.py 的洞内标定结果，仅作上界对照；非迁移方法",
+    "median_r2_operator_full": 0.5716,
+    "median_r2_first_order_transfer": -0.4908,
+    "median_rmse_operator_full": 3.462
+  }
+}

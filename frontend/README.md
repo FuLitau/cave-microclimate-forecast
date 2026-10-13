@@ -1,4 +1,4 @@
-# 石窟天盾 · 洞窟微气候风险预警系统（前端）
+# 石窟天盾 · 基于域泛化的窟内微气候迁移（前端）
 
 Vue 3 + TypeScript + Vite + ECharts 的纯前端演示控制台。所有数据均为
 **实验落盘结果硬编码**（`src/data/*.ts`，由 `tools/build_frontend_data.py`
