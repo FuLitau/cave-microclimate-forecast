@@ -35,6 +35,7 @@ fontTools>=4.50      # tools/check_glyphs.py（缺字形审计）
 Markdown>=3.6        # tools/md2pdf.py（Markdown 解析）
 
 # ---------------------------------------------------------------- 说明
-# 本文件**只列真正被 import 的包**。探索阶段装过的 `pydmd`、`scoringrules`
-# 未在交付代码中被 import（自实现的 twCRPS 与 EDMD 不依赖它们），故不列入——
-# 以免评委按此安装后误以为它们参与计算。
+# 本文件**只列参与计算的依赖**。探索阶段装过的 `pydmd` 未在交付代码中被 import；
+# `scoringrules` 仅在 `code/experiments/check_twcrps_consistency.py` 的 T5 子项里
+# 以 try/except **可选**导入（缺失时该子项标 skipped），不参与训练与推理。
+# 故二者均不列入正式依赖——以免评委按此安装后误以为它们参与计算。
